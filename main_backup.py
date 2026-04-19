@@ -1,20 +1,3 @@
-"""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║      SENTINAL LEGAL ENGINE v4.1 — SPEED EDITION                            ║
-║                                                                              ║
-║  ⚡ Local Speed  · 🧠 Deep NLP  · 💬 Smart Chat  · 🔐 E2E (cloud only)     ║
-║  📊 Obligation Map · ⚖️ Power Imbalance · 🔍 Contradiction Detection        ║
-║                                                                              ║
-║  v4.1 CHANGES vs v4.0:                                                      ║
-║  • E2E encryption removed from local /analyze + /chat paths                 ║
-║    (encryption only on /analyze/encrypted — used by cloud clients)          ║
-║  • NLP fast-path: skips stages 9/10/11 for short local docs (<500 words)   ║
-║  • Chat NLP skips obligations+ambiguity for short context (<300 words)      ║
-║  • Local max_chars 7000→5000 (fits llama3.1:8b ctx faster)                 ║
-║  • asyncio.gather() parallelises NLP + cache-key check                      ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-"""
-
 import os, json, re, logging, time, hashlib, base64, secrets, asyncio, unicodedata
 from typing import Optional
 from collections import defaultdict
