@@ -58,3 +58,8 @@ python -m venv .venv
 
 # Install required packages
 pip install -r requirements.txt
+
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+
+ollama pull llama3.1:8b
+ollama create sentinal-llama -f ./ModelFile
