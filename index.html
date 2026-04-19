@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>sentinal.legal</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/tesseract.js@v4.1.2/dist/tesseract.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Fragment+Mono:ital@0;1&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --void: #131314;
+      --bg-rgb: 19,19,20;
+      --text: #e3e3e3;
+      --text2: #e0e0e0;
+      --muted: #b0b0b0;
+      --ghost: #9e9e9e;
+      --glass: rgba(255,255,255,0.03);
+      --glassborder: rgba(255,255,255,0.08);
+      --primary: #a8c7fa;
+      --primary-rgb: 168,199,250;
+      --inv-rgb: 255,255,255;
+      --danger: #f28b82;
+      --warn: #fdd663;
+      --safe: #81c995;
+      --blue: #8ab4f8;
+      --intel: #c58af9;
+      --money: #f48fb1;
+    }
+    :root[data-theme="light"] {
+      --void: #ffffff;
+      --bg-rgb: 255,255,255;
+      --text: #1f1f1f;
+      --text2: #444746;
+      --muted: #747775;
+      --ghost: #c4c7c5;
+      --glass: rgba(0,0,0,0.02);
+      --glassborder: rgba(0,0,0,0.06);
+      --primary: #0b57d0;
+      --primary-rgb: 11,87,208;
+      --inv-rgb: 0,0,0;
+      --danger: #b3261e;
+      --warn: #ea8600;
+      --safe: #146c2e;
+      --blue: #0a56d1;
+      --intel: #6e2594;
+      --money: #981028;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--void);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;overflow-x:hidden}
+    ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(var(--primary-rgb),0.4);border-radius:2px}
+    ::selection{background:rgba(var(--primary-rgb),0.22);color:var(--text)}
+    #bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+    .grid-bg{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:linear-gradient(rgba(var(--inv-rgb),0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--inv-rgb),0.022) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 10%,transparent 80%)}
+    .glass{background:linear-gradient(145deg,rgba(var(--inv-rgb),0.07) 0%,rgba(var(--inv-rgb),0.025) 100%);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(var(--inv-rgb),0.1);box-shadow:0 8px 40px rgba(0,0,0,0.4),inset 0 1px 0 rgba(var(--inv-rgb),0.1)}
+    .glass:hover{border-color:rgba(var(--primary-rgb),0.2);box-shadow:0 12px 50px rgba(0,0,0,0.45),0 0 40px rgba(var(--primary-rgb),0.05),inset 0 1px 0 rgba(var(--inv-rgb),0.12)}
+    header{position:sticky;top:0;z-index:200;background:rgba(var(--bg-rgb),0.5);backdrop-filter:blur(30px) saturate(200%);-webkit-backdrop-filter:blur(30px) saturate(200%);border-bottom:1px solid rgba(var(--inv-rgb),0.07);padding:13px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 0 rgba(var(--inv-rgb),0.04),0 8px 32px rgba(0,0,0,0.3)}
+    header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(var(--primary-rgb),0.25),transparent)}
+    .logo-wrap{display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+    .logo-hex{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(var(--primary-rgb),0.13),rgba(var(--primary-rgb),0.04));border:1.5px solid rgba(var(--primary-rgb),0.45);box-shadow:0 0 14px rgba(var(--primary-rgb),0.12),inset 0 1px 0 rgba(var(--primary-rgb),0.2);transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .3s;animation:logoPulse 3s ease-in-out infinite}
+    @keyframes logoPulse{0%,100%{box-shadow:0 0 10px rgba(var(--primary-rgb),.1),inset 0 1px 0 rgba(var(--primary-rgb),.2)}50%{box-shadow:0 0 24px rgba(var(--primary-rgb),.25),inset 0 1px 0 rgba(var(--primary-rgb),.25)}}
+    .logo-hex::before{content:'';position:absolute;top:0;left:-110%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(var(--primary-rgb),.3),transparent);transform:skewX(-18deg);animation:logoSweep 4s ease-in-out 1s infinite}
+    @keyframes logoSweep{0%,65%{left:-110%}80%{left:170%}100%{left:170%}}
+    .logo-hex::after{content:'';position:absolute;inset:-4px;border-radius:13px;background:conic-gradient(from 0deg,transparent 270deg,var(--primary) 360deg);opacity:0;animation:spinConic 2s linear infinite;transition:opacity .3s;z-index:-1;mask:radial-gradient(farthest-side,transparent 62%,black 64%);-webkit-mask:radial-gradient(farthest-side,transparent 62%,black 64%)}
+    @keyframes spinConic{to{transform:rotate(360deg)}}
+    .logo-wrap:hover .logo-hex::after{opacity:1}
+    .logo-wrap:hover .logo-hex{transform:scale(1.1) rotate(-5deg);border-color:var(--primary);animation:none;box-shadow:0 0 34px rgba(var(--primary-rgb),.55),0 0 12px rgba(var(--primary-rgb),.3),inset 0 1px 0 rgba(var(--primary-rgb),.3)}
+    .logo-wrap:hover .logo-hex svg{animation:iconWiggle .45s ease}
+    @keyframes iconWiggle{0%{transform:rotate(0) scale(1)}25%{transform:rotate(-10deg) scale(1.15)}55%{transform:rotate(7deg) scale(1.1)}80%{transform:rotate(-3deg) scale(1.05)}100%{transform:rotate(0) scale(1)}}
+    .logo-wrap:hover .logo-text{animation:glitchFlash .35s steps(2)}
+    @keyframes glitchFlash{0%{color:var(--text)}30%{color:var(--primary);transform:translateX(2px)}60%{color:var(--text);transform:translateX(-1px)}100%{color:var(--text)}}
+    .logo-text{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.06em;color:var(--text)}
+    .logo-text .dot{color:var(--primary)}
+    .nav-center{display:flex;align-items:center;gap:2px;position:absolute;left:50%;transform:translateX(-50%)}
+    .nav-link{font-size:13px;font-weight:500;color:var(--ghost);background:none;border:none;cursor:pointer;padding:7px 16px;border-radius:9px;text-decoration:none;position:relative;transition:color .2s,background .2s}
+    .nav-link::after{content:'';position:absolute;bottom:3px;left:50%;right:50%;height:1.5px;background:linear-gradient(90deg,var(--primary),var(--blue));border-radius:2px;transition:left .25s,right .25s}
+    .nav-link:hover{color:var(--text);background:rgba(var(--inv-rgb),0.05)}
+    .nav-link:hover::after,.nav-link.active::after{left:16px;right:16px}
+    .nav-link.active{color:var(--text)}.nav-link.active::after{background:var(--primary)}
+    .nav-right{display:flex;align-items:center;gap:8px}
+
+    /* STATUS CHIP */
+    .status-chip{display:flex;align-items:center;gap:7px;border-radius:20px;padding:5px 12px;font-family:'Fragment Mono',monospace;font-size:10px;letter-spacing:.12em;transition:all .3s;cursor:pointer;user-select:none}
+    .status-chip.local{background:rgba(var(--primary-rgb),0.06);border:1px solid rgba(var(--primary-rgb),0.18);color:var(--primary)}
+    .status-chip.cloud{background:rgba(107,140,255,0.08);border:1px solid rgba(107,140,255,0.28);color:var(--blue)}
+    .status-chip:hover{transform:scale(1.04);box-shadow:0 0 16px rgba(var(--primary-rgb),.15)}
+    .status-chip.cloud:hover{box-shadow:0 0 16px rgba(107,140,255,.2)}
+    .sdot{width:6px;height:6px;border-radius:50%;box-shadow:0 0 8px currentColor;animation:blink 1.4s ease-in-out infinite;background:currentColor}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+    /* LANGUAGE DROPDOWN */
+    .lang-wrap{position:relative}
+    .lang-btn{display:flex;align-items:center;gap:6px;border-radius:10px;padding:7px 12px;font-family:'Fragment Mono',monospace;font-size:11px;letter-spacing:.08em;background:rgba(var(--inv-rgb),.04);border:1px solid rgba(var(--inv-rgb),.1);color:var(--ghost);cursor:pointer;transition:all .2s}
+    .lang-btn:hover{background:rgba(var(--inv-rgb),.08);border-color:rgba(var(--inv-rgb),.18);color:var(--text)}
+    .lang-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:rgba(var(--bg-rgb),.95);backdrop-filter:blur(28px);border:1px solid rgba(var(--inv-rgb),.12);border-radius:14px;padding:6px;min-width:130px;box-shadow:0 16px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(var(--inv-rgb),.06);display:none;z-index:300;animation:riseIn .2s ease}
+    .lang-dropdown.open{display:block}
+    .lang-opt{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;cursor:pointer;font-family:'Fragment Mono',monospace;font-size:12px;color:var(--ghost);transition:all .15s}
+    .lang-opt:hover{background:rgba(var(--inv-rgb),.07);color:var(--text)}
+    .lang-opt.active{background:rgba(var(--primary-rgb),.08);color:var(--primary);border:1px solid rgba(var(--primary-rgb),.15)}
+    .lang-flag{font-size:15px}
+
+    .login-btn{display:flex;align-items:center;gap:7px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;background:var(--primary);color:var(--void);border:none;cursor:pointer;padding:8px 18px;border-radius:10px;position:relative;overflow:hidden;transition:box-shadow .25s,transform .15s}
+    .login-btn::after{content:'';position:absolute;top:0;left:-120%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(var(--inv-rgb),.35),transparent);transform:skewX(-18deg)}
+    .login-btn:hover{box-shadow:0 0 30px rgba(var(--primary-rgb),.45),0 4px 16px rgba(var(--primary-rgb),.2);transform:translateY(-1px)}
+    .login-btn:hover::after{animation:shimmer .55s ease forwards}
+    @keyframes shimmer{from{left:-120%}to{left:160%}}
+    main{max-width:800px;margin:0 auto;padding:64px 24px 120px;position:relative;z-index:10}
+    .hero{margin-bottom:52px}
+    .eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:'Fragment Mono',monospace;font-size:11px;color:var(--primary);text-transform:uppercase;letter-spacing:.18em;margin-bottom:22px;opacity:0;animation:riseIn .6s ease .1s forwards}
+    .eyebrow::before{content:'';display:inline-block;width:24px;height:1px;background:var(--primary)}
+    .eyebrow::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--primary);box-shadow:0 0 8px var(--primary);animation:blink 1.4s ease-in-out infinite}
+    h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(56px,9vw,90px);line-height:.9;letter-spacing:.025em;color:var(--text);margin-bottom:22px;opacity:0;animation:riseIn .7s ease .2s forwards}
+    h1 .acc{background:linear-gradient(135deg,var(--primary) 0%,var(--intel) 50%,var(--primary) 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 20px rgba(var(--primary-rgb),.4))}
+    .hero-sub{font-size:15px;color:var(--ghost);max-width:460px;line-height:1.7;opacity:0;animation:riseIn .7s ease .35s forwards}
+    .badge-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:22px;opacity:0;animation:riseIn .7s ease .5s forwards}
+    .badge{display:inline-flex;align-items:center;gap:6px;font-family:'Fragment Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;border-radius:20px;background:rgba(var(--inv-rgb),0.04);border:1px solid rgba(var(--inv-rgb),0.09);color:var(--ghost);backdrop-filter:blur(10px)}
+    .bd{width:5px;height:5px;border-radius:50%}
+    @keyframes riseIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .g-card{border-radius:20px;transition:border-color .3s,box-shadow .3s}
+    .mode-card{padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+    .mode-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+    .mode-desc{font-family:'Fragment Mono',monospace;font-size:11px;color:var(--muted)}
+    .tw{position:relative;cursor:pointer;flex-shrink:0}
+    .tw input{display:none}
+    .tt{width:54px;height:29px;border-radius:15px;background:rgba(var(--inv-rgb),.08);border:1px solid rgba(var(--inv-rgb),.1);display:block;position:relative;transition:background .3s,border-color .3s}
+    .th{position:absolute;top:4px;left:4px;width:21px;height:21px;border-radius:50%;background:var(--ghost);transition:transform .3s cubic-bezier(.34,1.56,.64,1),background .3s,box-shadow .3s}
+    .tw input:checked+.tt{background:rgba(107,140,255,.25);border-color:rgba(107,140,255,.4)}
+    .tw input:checked+.tt .th{transform:translateX(25px);background:var(--blue);box-shadow:0 0 14px rgba(107,140,255,.6)}
+
+    .input-tabs{display:flex;gap:3px;background:rgba(var(--inv-rgb),.04);border:1px solid rgba(var(--inv-rgb),.07);border-radius:14px;padding:4px;margin-bottom:16px}
+    .itab{flex:1;padding:9px 8px;border-radius:10px;border:none;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;color:var(--muted);transition:all .25s;display:flex;align-items:center;justify-content:center;gap:7px}
+    .itab svg{opacity:.6;transition:opacity .2s}
+    .itab:hover{color:var(--text2);background:rgba(var(--inv-rgb),.04)}
+    .itab.active{background:rgba(var(--inv-rgb),.09);border:1px solid rgba(var(--inv-rgb),.1);color:var(--text);box-shadow:0 2px 12px rgba(0,0,0,.35),inset 0 1px 0 rgba(var(--inv-rgb),.08)}
+    .itab.active svg{opacity:1}
+
+    #dz{padding:52px 24px;text-align:center;cursor:pointer;margin-bottom:18px;position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(145deg,rgba(var(--inv-rgb),.05),rgba(var(--inv-rgb),.02));backdrop-filter:blur(20px);border:1.5px dashed rgba(var(--inv-rgb),.12);box-shadow:0 8px 32px rgba(0,0,0,.35),inset 0 1px 0 rgba(var(--inv-rgb),.06);transition:all .35s cubic-bezier(.25,.46,.45,.94)}
+    #dz::before{content:'';position:absolute;inset:0;border-radius:20px;background:conic-gradient(from 0deg at 50% 50%,transparent 0deg,rgba(var(--primary-rgb),.06) 60deg,transparent 120deg);animation:dzSpin 10s linear infinite;opacity:0;transition:opacity .4s}
+    #dz:hover::before,#dz.dov::before{opacity:1}
+    @keyframes dzSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+    #dz:hover,#dz.dov{border-color:rgba(var(--primary-rgb),.45);background:linear-gradient(145deg,rgba(var(--primary-rgb),.04),rgba(var(--primary-rgb),.01));box-shadow:0 12px 50px rgba(0,0,0,.4),0 0 60px rgba(var(--primary-rgb),.1),inset 0 1px 0 rgba(var(--primary-rgb),.1)}
+    .cm{position:absolute;width:14px;height:14px;border-color:rgba(var(--primary-rgb),.35);border-style:solid;transition:border-color .3s,width .3s,height .3s}
+    #dz:hover .cm{border-color:rgba(var(--primary-rgb),.7);width:18px;height:18px}
+    .cm-tl{top:12px;left:12px;border-width:1.5px 0 0 1.5px}.cm-tr{top:12px;right:12px;border-width:1.5px 1.5px 0 0}
+    .cm-bl{bottom:12px;left:12px;border-width:0 0 1.5px 1.5px}.cm-br{bottom:12px;right:12px;border-width:0 1.5px 1.5px 0}
+    .dzi{width:72px;height:72px;border-radius:20px;margin:0 auto 20px;background:linear-gradient(145deg,rgba(var(--inv-rgb),.07),rgba(var(--inv-rgb),.02));border:1px solid rgba(var(--inv-rgb),.1);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 4px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(var(--inv-rgb),.08);transition:border-color .3s,box-shadow .3s,transform .3s}
+    .dz-ring{position:absolute;inset:-9px;border-radius:27px;border:1px solid rgba(var(--primary-rgb),0);animation:ringPulse 2.8s ease-in-out infinite}
+    @keyframes ringPulse{0%{inset:-9px;border-color:rgba(var(--primary-rgb),.3);opacity:1}100%{inset:-22px;border-color:rgba(var(--primary-rgb),0);opacity:0}}
+    #dz:hover .dzi{border-color:rgba(var(--primary-rgb),.4);box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 24px rgba(var(--primary-rgb),.18),inset 0 1px 0 rgba(var(--primary-rgb),.12);transform:translateY(-3px) scale(1.04)}
+    .dz-ttl{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px}
+    .dz-sub{font-family:'Fragment Mono',monospace;font-size:11px;color:var(--muted)}
+    #fn{display:none;margin-top:16px;font-family:'Fragment Mono',monospace;font-size:12px;color:var(--primary);background:rgba(var(--primary-rgb),.08);border:1px solid rgba(var(--primary-rgb),.2);padding:5px 14px;border-radius:20px;backdrop-filter:blur(8px);animation:riseIn .3s ease}
+
+    #imgdz{display:none;padding:52px 24px;text-align:center;cursor:pointer;margin-bottom:18px;position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(145deg,rgba(var(--inv-rgb),.05),rgba(var(--inv-rgb),.02));backdrop-filter:blur(20px);border:1.5px dashed rgba(107,140,255,.22);box-shadow:0 8px 32px rgba(0,0,0,.35),inset 0 1px 0 rgba(var(--inv-rgb),.06);transition:all .35s cubic-bezier(.25,.46,.45,.94)}
+    #imgdz:hover,#imgdz.dov{border-color:rgba(107,140,255,.55);background:linear-gradient(145deg,rgba(107,140,255,.04),rgba(107,140,255,.01));box-shadow:0 12px 50px rgba(0,0,0,.4),0 0 60px rgba(107,140,255,.12),inset 0 1px 0 rgba(107,140,255,.1)}
+    #imgdz::before{content:'';position:absolute;inset:0;border-radius:20px;background:conic-gradient(from 0deg at 50% 50%,transparent 0deg,rgba(107,140,255,.06) 60deg,transparent 120deg);animation:dzSpin 10s linear infinite;opacity:0;transition:opacity .4s}
+    #imgdz:hover::before,#imgdz.dov::before{opacity:1}
+    .imgdz-inner{width:72px;height:72px;border-radius:20px;margin:0 auto 20px;background:linear-gradient(145deg,rgba(var(--inv-rgb),.07),rgba(var(--inv-rgb),.02));border:1px solid rgba(var(--inv-rgb),.1);display:flex;align-items:center;justify-content:center;transition:border-color .3s,box-shadow .3s,transform .3s}
+    #imgdz:hover .imgdz-inner{border-color:rgba(107,140,255,.45);box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 24px rgba(107,140,255,.2),inset 0 1px 0 rgba(107,140,255,.15);transform:translateY(-3px) scale(1.04)}
+    #imgpreview{display:none;max-width:100%;max-height:220px;border-radius:12px;margin:0 auto;object-fit:contain}
+
+    #txtarea{display:none;margin-bottom:18px;position:relative}
+    .txt-wrap{background:linear-gradient(145deg,rgba(var(--inv-rgb),.06),rgba(var(--inv-rgb),.02));backdrop-filter:blur(20px);border:1.5px solid rgba(var(--inv-rgb),.1);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,.35),inset 0 1px 0 rgba(var(--inv-rgb),.06);overflow:hidden;transition:border-color .3s,box-shadow .3s}
+    .txt-wrap:focus-within{border-color:rgba(0,229,160,.35);box-shadow:0 12px 50px rgba(0,0,0,.4),0 0 40px rgba(0,229,160,.08),inset 0 1px 0 rgba(0,229,160,.1)}
+    .txt-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 8px;border-bottom:1px solid rgba(var(--inv-rgb),.07)}
+    .txt-label{font-family:'Fragment Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;display:flex;align-items:center;gap:7px}
+    .txt-dot{width:7px;height:7px;border-radius:50%;background:var(--safe);box-shadow:0 0 8px var(--safe)}
+    #txtcount{font-family:'Fragment Mono',monospace;font-size:10px;color:var(--muted)}
+    textarea#txtinput{width:100%;min-height:200px;background:transparent;border:none;outline:none;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;line-height:1.7;padding:16px 20px;resize:vertical;caret-color:var(--safe)}
+    textarea#txtinput::placeholder{color:var(--muted)}
+    .txt-footer{padding:10px 18px 12px;border-top:1px solid rgba(var(--inv-rgb),.07);display:flex;align-items:center;gap:10px}
+    .txt-hint{font-family:'Fragment Mono',monospace;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+
+    #abtn{width:100%;padding:17px;border:none;border-radius:14px;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.1em;background:linear-gradient(135deg,var(--primary) 0%,var(--blue) 100%);color:var(--void);position:relative;overflow:hidden;margin-bottom:18px;transition:box-shadow .3s,transform .15s,opacity .2s}
+    #abtn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(var(--inv-rgb),.25) 0%,transparent 60%);opacity:0;transition:opacity .3s}
+    #abtn::after{content:'';position:absolute;top:0;left:-120%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(var(--inv-rgb),.35),transparent);transform:skewX(-18deg)}
+    #abtn:not(:disabled){box-shadow:0 0 30px rgba(var(--primary-rgb),.3),0 6px 20px rgba(var(--primary-rgb),.18)}
+    #abtn:not(:disabled):hover{box-shadow:0 0 55px rgba(var(--primary-rgb),.5),0 10px 35px rgba(var(--primary-rgb),.25);transform:translateY(-2px)}
+    #abtn:not(:disabled):hover::before{opacity:1}
+    #abtn:not(:disabled):hover::after{animation:shimmer .6s ease forwards}
+    #abtn:disabled{opacity:.3;cursor:not-allowed}
+    #loading{display:none;margin-bottom:18px}
+    .lcard{padding:22px 24px;border-radius:18px}
+    .ldots{display:flex;gap:6px;align-items:center}
+    .ldot{width:7px;height:7px;border-radius:50%;background:var(--primary);box-shadow:0 0 8px var(--primary);animation:blink 1.4s ease-in-out infinite}
+    .ldot:nth-child(2){animation-delay:.2s}.ldot:nth-child(3){animation-delay:.4s}
+    #lmsg{font-family:'Fragment Mono',monospace;font-size:12px;color:var(--ghost);margin-left:12px}
+    .sw{margin-top:16px;height:4px;border-radius:4px;background:rgba(var(--inv-rgb),.05);overflow:hidden;position:relative}
+    .sb{position:absolute;top:0;left:-35%;width:35%;height:100%;border-radius:4px;background:linear-gradient(90deg,transparent,var(--primary),transparent);box-shadow:0 0 10px var(--primary);animation:scanB 1.5s ease-in-out infinite}
+    @keyframes scanB{0%{left:-35%}100%{left:135%}}
+    .shims{display:flex;flex-direction:column;gap:6px;margin-top:16px;opacity:.25}
+    .shim{height:6px;border-radius:3px;background:linear-gradient(90deg,rgba(var(--inv-rgb),.06),rgba(var(--inv-rgb),.14),rgba(var(--inv-rgb),.06));background-size:200% 100%;animation:shimLine 1.8s ease-in-out infinite}
+    @keyframes shimLine{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    
+    #results{display:none}
+    #results.vis{display:block;animation:riseIn .5s ease}
+    .slbl{font-family:'Fragment Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.2em;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+    .slbl::before{content:'';display:block;width:18px;height:1px;background:var(--muted)}
+    .scard{padding:22px 24px;margin-bottom:18px;border-radius:18px;position:relative;overflow:hidden}
+    .scard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(var(--primary-rgb),.55),transparent)}
+    .scard p{font-size:14px;color:var(--text2);line-height:1.75}
+    .sbar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+    .sc{border-radius:16px;padding:18px 16px;position:relative;overflow:hidden;backdrop-filter:blur(20px);border:1px solid;transition:transform .25s,box-shadow .25s;cursor:default}
+    .sc:hover{transform:translateY(-4px)}
+    .sc::after{content:'';position:absolute;top:-30px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.07}
+    .sch{border-color:rgba(255,59,92,.25);background:linear-gradient(145deg,rgba(255,59,92,.07),rgba(255,59,92,.02))}.sch::after{background:var(--danger)}.sch:hover{box-shadow:0 16px 50px rgba(255,59,92,.18)}
+    .scm{border-color:rgba(255,140,66,.35);background:linear-gradient(145deg,rgba(255,140,66,.09),rgba(255,140,66,.02))}.scm::after{background:#ff8c42}.scm:hover{box-shadow:0 16px 50px rgba(255,140,66,.22)}
+    .scl{border-color:rgba(255,214,0,.3);background:linear-gradient(145deg,rgba(255,214,0,.07),rgba(255,214,0,.02))}.scl::after{background:#ffd600}.scl:hover{box-shadow:0 16px 50px rgba(255,214,0,.16)}
+    .sn{font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1}
+    .sl{font-family:'Fragment Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.12em;margin-top:4px;color:var(--muted)}
+    .nh{color:var(--danger);filter:drop-shadow(0 0 8px rgba(255,59,92,.4))}
+    .nm{color:#ff8c42;filter:drop-shadow(0 0 8px rgba(255,140,66,.5))}
+    .nl{color:#ffd600;filter:drop-shadow(0 0 8px rgba(255,214,0,.45))}
+    .gdiv{height:1px;background:rgba(var(--inv-rgb),.05);margin:24px 0;position:relative;overflow:hidden}
+    .gdiv::after{content:'';position:absolute;top:0;left:-40%;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(var(--primary-rgb),.45),transparent);animation:ds 5s ease-in-out infinite}
+    @keyframes ds{0%{left:-40%}100%{left:140%}}
+    
+    /* Tabs inside Results */
+    .rtabrow{display:flex;gap:4px;margin-bottom:18px;background:rgba(var(--inv-rgb),.04);border:1px solid rgba(var(--inv-rgb),.07);border-radius:14px;padding:4px;overflow-x:auto;}
+    .rtabrow::-webkit-scrollbar{display:none;}
+    .rtabbtn{flex:1;min-width:110px;padding:10px 14px;border-radius:10px;border:none;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:var(--muted);transition:all .25s;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;}
+    .rtabbtn:hover{color:var(--text2);background:rgba(var(--inv-rgb),.04);}
+    .rtabbtn.active{background:rgba(var(--inv-rgb),.09);border:1px solid rgba(var(--inv-rgb),.1);color:var(--text);box-shadow:0 2px 12px rgba(0,0,0,.35),inset 0 1px 0 rgba(var(--inv-rgb),.08);}
+    .rtab-panel{display:none;animation:riseIn .3s ease forwards;}
+    .rtab-panel.active{display:block;}
+
+    /* Risks Cards */
+    .rcards{display:flex;flex-direction:column;gap:12px}
+    .rcard{padding:18px 20px;border-radius:16px;background:linear-gradient(145deg,rgba(var(--inv-rgb),.055),rgba(var(--inv-rgb),.02));backdrop-filter:blur(24px);border:1px solid rgba(var(--inv-rgb),.09);box-shadow:0 4px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(var(--inv-rgb),.06);opacity:0;transform:translateY(10px);animation:riseIn .45s ease forwards;transition:transform .2s,box-shadow .2s;cursor:default}
+    .rcard:nth-child(1){animation-delay:.05s}.rcard:nth-child(2){animation-delay:.12s}.rcard:nth-child(3){animation-delay:.19s}.rcard:nth-child(4){animation-delay:.26s}.rcard:nth-child(n+5){animation-delay:.33s}
+    .rcard:hover{transform:translateX(5px)}
+    .rh{border-left:3px solid var(--danger)}.rh:hover{box-shadow:-6px 0 30px rgba(255,59,92,.2),0 4px 20px rgba(0,0,0,.3)}
+    .rm{border-left:3px solid #ff8c42}.rm:hover{box-shadow:-6px 0 30px rgba(255,140,66,.22),0 4px 20px rgba(0,0,0,.3)}
+    .rl{border-left:3px solid #ffd600}.rl:hover{box-shadow:-6px 0 30px rgba(255,214,0,.18),0 4px 20px rgba(0,0,0,.3)}
+    .rcls{font-family:'Fragment Mono',monospace;font-size:11.5px;color:var(--ghost);line-height:1.7;margin-bottom:10px;border-left:2px solid rgba(var(--inv-rgb),.07);padding-left:12px}
+    .rcex{font-size:13.5px;color:var(--text2);line-height:1.65}
+    .rbdg{display:inline-flex;align-items:center;font-family:'Fragment Mono',monospace;font-size:9px;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.1em;float:right;margin-left:10px}
+    .bh{background:rgba(255,59,92,.15);color:var(--danger);border:1px solid rgba(255,59,92,.3)}
+    .bm{background:rgba(255,140,66,.15);color:#ff8c42;border:1px solid rgba(255,140,66,.35)}
+    .bl{background:rgba(255,214,0,.12);color:#ffd600;border:1px solid rgba(255,214,0,.3)}
+    
+    .expo-block{margin-top:12px;border:1px solid rgba(236,72,153,.25);background:rgba(236,72,153,.05);padding:10px;border-radius:10px;}
+    .expo-tit{font-family:'Fragment Mono',monospace;font-size:9px;color:#ec4899;text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:4px;}
+    .expo-txt{font-size:12px;color:rgba(236,72,153,.9);line-height:1.5;}
+    
+    .rew-block{margin-top:8px;border:1px dashed rgba(34,197,94,.35);background:rgba(34,197,94,.05);padding:10px;border-radius:10px;}
+    .rew-tit{font-family:'Fragment Mono',monospace;font-size:9px;color:var(--safe);text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:4px;}
+    .rew-txt{font-family:'Fragment Mono',monospace;font-size:11px;color:rgba(34,197,94,.85);line-height:1.5;}
+    
+    /* Heatmap */
+    .heatmap-cell{border-radius:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px 8px;font-family:'Fragment Mono',monospace;position:relative;min-height:80px;background:linear-gradient(145deg,rgba(var(--inv-rgb),.05),rgba(var(--inv-rgb),.01));border:1px solid rgba(var(--inv-rgb),.08);}
+    .heatmap-cell.high{background:rgba(255,59,92,.1);border-color:rgba(255,59,92,.35);color:#ff8aaa;}
+    .heatmap-cell.high:hover{background:rgba(255,59,92,.18);box-shadow:0 0 16px rgba(255,59,92,.2);}
+    .heatmap-cell.medium{background:rgba(255,140,66,.1);border-color:rgba(255,140,66,.35);color:#ffb74d;}
+    .heatmap-cell.medium:hover{background:rgba(255,140,66,.18);box-shadow:0 0 16px rgba(255,140,66,.2);}
+    .heatmap-cell.low{background:rgba(255,214,0,.1);border-color:rgba(255,214,0,.3);color:#ffd600;}
+    .heatmap-cell.low:hover{background:rgba(255,214,0,.18);box-shadow:0 0 16px rgba(255,214,0,.15);}
+    .heatmap-cell.none{color:var(--ghost);}
+    .heatmap-cell.none:hover{background:rgba(var(--inv-rgb),.08);}
+    
+    /* Rights Waived */
+    .rwc{background:linear-gradient(145deg,rgba(255,59,92,.07),rgba(255,59,92,.02));border:1px solid rgba(255,59,92,.25);border-radius:16px;padding:16px 20px;margin-bottom:12px;display:flex;gap:14px;animation:riseIn .4s ease forwards;}
+    .rwc-i{font-size:24px;line-height:1;}
+    .rwc-tit{font-size:15px;font-weight:600;color:var(--danger);margin-bottom:4px;}
+    .rwc-det{font-size:13px;color:var(--text2);line-height:1.6;}
+    .rwc-cl{font-family:'Fragment Mono',monospace;font-size:10.5px;color:var(--muted);margin-top:8px;font-style:italic;}
+
+    /* Strategy */
+    .sstep{background:linear-gradient(145deg,rgba(var(--inv-rgb),.04),rgba(var(--inv-rgb),.01));border:1px solid rgba(var(--inv-rgb),.08);border-radius:14px;padding:16px 20px;margin-bottom:12px;display:flex;gap:14px;transition:all .2s;animation:riseIn .4s ease forwards;}
+    .sstep:hover{border-color:rgba(var(--primary-rgb),.25);background:rgba(var(--primary-rgb),.03);transform:translateY(-2px);}
+    .sstep-n{width:28px;height:28px;border-radius:50%;background:rgba(var(--primary-rgb),.1);border:1px solid rgba(var(--primary-rgb),.3);color:var(--primary);font-family:'Fragment Mono',monospace;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .sstep-t{font-size:14px;color:var(--text);line-height:1.65;}
+
+    /* Benchmark */
+    .bmrow{display:grid;grid-template-columns:1fr 30px 1fr;gap:12px;align-items:center;padding:16px 0;border-bottom:1px solid rgba(var(--inv-rgb),.06);}
+    .bmrow:last-child{border-bottom:none;}
+    .bm-col-tit{font-family:'Fragment Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;}
+
+    /* Chat AI */
+    .chat-area{display:flex;flex-direction:column;gap:12px;max-height:400px;overflow-y:auto;padding-right:6px;margin-bottom:16px;}
+    .chat-area::-webkit-scrollbar{width:3px}
+    .chat-area::-webkit-scrollbar-thumb{background:rgba(var(--inv-rgb),0.2);border-radius:2px}
+    .chat-b{padding:12px 16px;border-radius:14px;font-size:13.5px;line-height:1.6;animation:riseIn .3s ease forwards;}
+    .chat-ai{background:rgba(var(--inv-rgb),.05);border:1px solid rgba(var(--inv-rgb),.1);color:var(--text);border-top-left-radius:4px;align-self:flex-start;max-width:90%;}
+    .chat-u{background:linear-gradient(135deg,rgba(var(--primary-rgb),.15),rgba(var(--primary-rgb),.05));border:1px solid rgba(var(--primary-rgb),.3);color:var(--text);border-top-right-radius:4px;align-self:flex-end;max-width:85%;}
+    .chat-inp-wrap{display:flex;gap:8px;}
+    .chat-inp{flex:1;background:rgba(var(--inv-rgb),.04);border:1px solid rgba(var(--inv-rgb),.1);border-radius:12px;padding:12px 16px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;outline:none;transition:all .2s;}
+    .chat-inp:focus{border-color:var(--primary);background:rgba(var(--primary-rgb),.03);}
+    .chat-btn{background:var(--primary);color:#000;border:none;border-radius:10px;padding:0 20px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;}
+    .chat-btn:hover{box-shadow:0 0 16px rgba(var(--primary-rgb),.4);transform:translateY(-1px);}
+    .chat-typing-dot{width:5px;height:5px;border-radius:50%;background:var(--text2);display:inline-block;animation:blink 1.4s infinite;}
+
+    /* Power Balance */
+    .pb-track{height:12px;border-radius:20px;background:rgba(var(--inv-rgb),.05);overflow:hidden;display:flex;margin:12px 0;}
+
+    #verdict{display:none;margin-top:22px}
+    #verdict.vis{display:block;animation:riseIn .5s ease}
+    .vcard{border-radius:20px;overflow:hidden;backdrop-filter:blur(28px);border:1px solid}
+    .vband{padding:20px 24px;display:flex;align-items:center;gap:14px}
+    .vico{font-size:28px}
+    .vlbl{font-family:'Fragment Mono',monospace;font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.1em}
+    .vtit{font-size:16px;font-weight:700;margin-top:2px}
+    .vbody{padding:14px 24px;display:flex;gap:10px}
+    .vs{flex:1;text-align:center;padding:12px 8px;border-radius:12px;background:rgba(var(--inv-rgb),.04)}
+    .vsn{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1}
+    .vsl{font-family:'Fragment Mono',monospace;font-size:9px;opacity:.6;margin-top:3px;text-transform:uppercase}
+    .vdh{border-color:rgba(255,59,92,.4);box-shadow:0 0 50px rgba(255,59,92,.08)}.vdh .vband{background:linear-gradient(135deg,rgba(255,59,92,.15),rgba(255,59,92,.05));color:#ff8aaa}
+    .vdm{border-color:rgba(255,140,66,.4);box-shadow:0 0 50px rgba(255,140,66,.08)}.vdm .vband{background:linear-gradient(135deg,rgba(255,140,66,.15),rgba(255,140,66,.05));color:#ffb74d}
+    .vdl{border-color:rgba(255,214,0,.35);box-shadow:0 0 50px rgba(255,214,0,.07)}.vdl .vband{background:linear-gradient(135deg,rgba(255,214,0,.12),rgba(255,214,0,.04));color:#ffd600}
+    .vds{border-color:rgba(0,229,160,.4);box-shadow:0 0 50px rgba(0,229,160,.09)}.vds .vband{background:linear-gradient(135deg,rgba(0,229,160,.15),rgba(0,229,160,.05));color:#4ade80}
+    
+    #rov{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+    #rov.open{display:flex}
+    .ovbg{position:absolute;inset:0;background:rgba(var(--bg-rgb),.7);backdrop-filter:blur(20px)}
+    .pbox{position:relative;z-index:10;border-radius:26px;overflow:hidden;width:100%;max-width:430px;animation:popIn .55s cubic-bezier(.34,1.56,.64,1) forwards;background:rgba(10,11,16,.8);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:1px solid rgba(var(--inv-rgb),.12);box-shadow:0 40px 100px rgba(0,0,0,.7),inset 0 1px 0 rgba(var(--inv-rgb),.1)}
+    @keyframes popIn{from{opacity:0;transform:scale(.78) translateY(28px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    .pband{padding:38px 32px 28px;text-align:center;position:relative;overflow:hidden}
+    .pband::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
+    .pico{font-size:54px;line-height:1;display:block;animation:iconD .6s cubic-bezier(.34,1.56,.64,1) .2s both}
+    @keyframes iconD{from{transform:scale(0) rotate(-25deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+    .ptit{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:.05em;margin-top:14px}
+    .ptag{font-family:'Fragment Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.16em;opacity:.65;margin-top:5px}
+    .pbody{padding:0 28px 30px}
+    .ppills{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .ppill{font-family:'Fragment Mono',monospace;font-size:10px;padding:3px 11px;border-radius:20px;transition:all .2s;}
+    .ppill:hover{opacity:.8;}
+    .pph{background:rgba(255,59,92,.18);color:#ff7090;border:1px solid rgba(255,59,92,.35)}
+    .ppm{background:rgba(255,140,66,.18);color:#ff8c42;border:1px solid rgba(255,140,66,.35)}
+    .ppl{background:rgba(255,214,0,.14);color:#ffd600;border:1px solid rgba(255,214,0,.32)}
+    .pmsg{font-size:14px;line-height:1.7;text-align:center;margin-bottom:16px}
+    .ptip{border-radius:14px;padding:14px 16px;font-family:'Fragment Mono',monospace;font-size:11.5px;line-height:1.65;margin-bottom:18px}
+    .pcta{width:100%;padding:14px;border:none;border-radius:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;transition:all .2s;position:relative;overflow:hidden}
+    .pcta::after{content:'';position:absolute;top:0;left:-120%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(var(--inv-rgb),.3),transparent);transform:skewX(-18deg)}
+    .pcta:hover::after{animation:shimmer .55s ease forwards}
+    .pcta:hover{transform:translateY(-1px)}
+    .php .pband{background:linear-gradient(145deg,rgba(255,59,92,.2),rgba(255,59,92,.06))}.php .pband::before{background:linear-gradient(90deg,transparent,rgba(255,59,92,.6),transparent)}
+    .php{box-shadow:0 0 100px rgba(255,59,92,.22),0 40px 100px rgba(0,0,0,.7);border-color:rgba(255,59,92,.35)}
+    .php .ptit,.php .ptag{color:#ff8aaa}.php .pmsg{color:#f5b0bb}
+    .php .ptip{background:rgba(255,59,92,.08);border:1px solid rgba(255,59,92,.2);color:#ff8aaa}
+    .php .pcta{background:var(--danger);color:#fff;box-shadow:0 0 24px rgba(255,59,92,.35)}
+    .pmp .pband{background:linear-gradient(145deg,rgba(255,140,66,.18),rgba(255,140,66,.05))}.pmp .pband::before{background:linear-gradient(90deg,transparent,rgba(255,140,66,.6),transparent)}
+    .pmp{box-shadow:0 0 100px rgba(255,140,66,.18),0 40px 100px rgba(0,0,0,.7);border-color:rgba(255,140,66,.35)}
+    .pmp .ptit,.pmp .ptag{color:#ffb74d}.pmp .pmsg{color:#f5d0a0}
+    .pmp .ptip{background:rgba(255,140,66,.08);border:1px solid rgba(255,140,66,.2);color:#ffb060}
+    .pmp .pcta{background:var(--warn);color:#0a0500;box-shadow:0 0 24px rgba(255,140,66,.35)}
+    .plp .pband{background:linear-gradient(145deg,rgba(255,214,0,.13),rgba(255,214,0,.03))}.plp .pband::before{background:linear-gradient(90deg,transparent,rgba(255,214,0,.5),transparent)}
+    .plp{box-shadow:0 0 100px rgba(255,214,0,.13),0 40px 100px rgba(0,0,0,.7);border-color:rgba(255,214,0,.32)}
+    .plp .ptit,.plp .ptag{color:#ffd600}.plp .pmsg{color:#f5e8a0}
+    .plp .ptip{background:rgba(255,214,0,.07);border:1px solid rgba(255,214,0,.2);color:#ffd600}
+    .plp .pcta{background:#ffd600;color:#14100a;box-shadow:0 0 24px rgba(255,214,0,.3)}
+    .psp .pband{background:linear-gradient(145deg,rgba(0,229,160,.18),rgba(0,229,160,.05))}.psp .pband::before{background:linear-gradient(90deg,transparent,rgba(0,229,160,.6),transparent)}
+    .psp{box-shadow:0 0 100px rgba(0,229,160,.2),0 40px 100px rgba(0,0,0,.7);border-color:rgba(0,229,160,.4)}
+    .psp .ptit,.psp .ptag{color:#4ade80}.psp .pmsg{color:#a0edd0}
+    .psp .ptip{background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.2);color:#4ade80}
+    .psp .pcta{background:var(--safe);color:#000e07;box-shadow:0 0 24px rgba(0,229,160,.35)}
+    
+    #lov{position:fixed;inset:0;z-index:600;display:none;align-items:center;justify-content:center;padding:20px}
+    #lov.open{display:flex}
+    .lbg{position:absolute;inset:0;background:rgba(var(--bg-rgb),.78);backdrop-filter:blur(24px)}
+    .lbox{position:relative;z-index:10;border-radius:28px;overflow:hidden;width:100%;max-width:410px;animation:popIn .5s cubic-bezier(.34,1.56,.64,1) forwards;background:rgba(var(--bg-rgb),.82);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border:1px solid rgba(var(--inv-rgb),.13);box-shadow:0 40px 100px rgba(0,0,0,.75),inset 0 1px 0 rgba(var(--inv-rgb),.1)}
+    .ltop{padding:36px 32px 28px;text-align:center;background:linear-gradient(145deg,rgba(var(--inv-rgb),.04),rgba(var(--inv-rgb),.01));border-bottom:1px solid rgba(var(--inv-rgb),.07);position:relative}
+    .ltop::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(var(--primary-rgb),.5),transparent)}
+    .llgo{width:54px;height:54px;border-radius:15px;background:linear-gradient(145deg,rgba(var(--primary-rgb),.15),rgba(var(--primary-rgb),.04));border:1.5px solid rgba(var(--primary-rgb),.4);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 0 28px rgba(var(--primary-rgb),.2),inset 0 1px 0 rgba(var(--primary-rgb),.2);animation:logoPulse 2.5s ease-in-out infinite}
+    .ltit{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:.07em;color:var(--text);margin-bottom:5px}
+    .ltit span{color:var(--primary)}
+    .lsub{font-family:'Fragment Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.08em}
+    .lbody{padding:28px 32px 32px}
+    .tabrow{display:flex;gap:3px;margin-bottom:26px;background:rgba(var(--inv-rgb),.04);border:1px solid rgba(var(--inv-rgb),.07);border-radius:12px;padding:3px}
+    .tabbtn{flex:1;padding:9px;border-radius:10px;border:none;background:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;color:var(--muted);transition:all .25s}
+    .tabbtn.active{background:rgba(var(--inv-rgb),.09);border:1px solid rgba(var(--inv-rgb),.1);color:var(--text);box-shadow:0 2px 12px rgba(0,0,0,.35),inset 0 1px 0 rgba(var(--inv-rgb),.08)}
+    .flbl{font-family:'Fragment Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;margin-bottom:7px;display:block}
+    .finp{width:100%;background:rgba(var(--inv-rgb),.04);border:1px solid rgba(var(--inv-rgb),.09);border-radius:12px;padding:12px 15px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;outline:none;transition:border-color .25s,box-shadow .25s,background .25s;margin-bottom:16px;backdrop-filter:blur(8px)}
+    .finp:focus{border-color:rgba(var(--primary-rgb),.45);background:rgba(var(--primary-rgb),.03);box-shadow:0 0 0 3px rgba(var(--primary-rgb),.08)}
+    .finp::placeholder{color:var(--muted)}
+    .flink{font-family:'Fragment Mono',monospace;font-size:11px;color:var(--muted);cursor:pointer;transition:color .2s;display:block;text-align:right;margin-top:-8px;margin-bottom:16px}
+    .flink:hover{color:var(--primary)}
+    .lcta{width:100%;padding:14px;background:linear-gradient(135deg,var(--primary),var(--intel));color:var(--void);border:none;border-radius:13px;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.09em;position:relative;overflow:hidden;margin-bottom:20px;transition:box-shadow .25s,transform .15s}
+    .lcta::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(var(--inv-rgb),.22) 0%,transparent 60%)}
+    .lcta::after{content:'';position:absolute;top:0;left:-120%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(var(--inv-rgb),.35),transparent);transform:skewX(-18deg)}
+    .lcta:hover{box-shadow:0 0 40px rgba(var(--primary-rgb),.5),0 8px 24px rgba(var(--primary-rgb),.22);transform:translateY(-1px)}
+    .lcta:hover::after{animation:shimmer .55s ease forwards}
+    .orr{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .orl{flex:1;height:1px;background:rgba(var(--inv-rgb),.07)}
+    .ort{font-family:'Fragment Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em}
+    .sbtns{display:flex;gap:10px}
+    .sbtn{flex:1;padding:11px 10px;border-radius:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;color:var(--text);background:rgba(var(--inv-rgb),.05);border:1px solid rgba(var(--inv-rgb),.09);display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;backdrop-filter:blur(8px)}
+    .sbtn:hover{background:rgba(var(--inv-rgb),.09);border-color:rgba(var(--inv-rgb),.16);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
+    .lclose{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:10px;background:rgba(var(--inv-rgb),.06);border:1px solid rgba(var(--inv-rgb),.1);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ghost);font-size:15px;font-family:'Space Grotesk',sans-serif;transition:all .2s;backdrop-filter:blur(8px)}
+    .lclose:hover{background:rgba(255,59,92,.15);border-color:rgba(255,59,92,.3);color:var(--danger)}
+    #hud{position:fixed;bottom:28px;right:28px;z-index:50;display:none;flex-direction:column;gap:8px;align-items:flex-end}
+    #hud.vis{display:flex;animation:riseIn .4s ease}
+    .hpill{background:rgba(var(--bg-rgb),.88);backdrop-filter:blur(20px);border:1px solid rgba(var(--inv-rgb),.1);border-radius:20px;padding:8px 15px;font-family:'Fragment Mono',monospace;font-size:11px;color:var(--ghost);display:flex;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(var(--inv-rgb),.06)}
+    .hd{width:7px;height:7px;border-radius:50%}
+    .devbtn{font-family:'Fragment Mono',monospace;font-size:11px;color:var(--muted);background:rgba(var(--inv-rgb),.03);border:1px solid rgba(var(--inv-rgb),.07);border-radius:9px;padding:9px 20px;cursor:pointer;display:block;margin:28px auto 0;backdrop-filter:blur(10px);transition:all .2s}
+    .devbtn:hover{color:var(--primary);border-color:rgba(var(--primary-rgb),.25);background:rgba(var(--primary-rgb),.04);box-shadow:0 0 20px rgba(var(--primary-rgb),.07)}
+
+    /* MODE SWITCH ANIMATION */
+    .mode-card{transition:border-color .4s,box-shadow .4s}
+    .mode-card.cloud-active{border-color:rgba(107,140,255,.3)!important;box-shadow:0 0 30px rgba(107,140,255,.08),0 8px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(var(--inv-rgb),.1)!important}
+  </style>
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+  <div class="grid-bg"></div>
+
+  <header>
+    <div class="logo-wrap">
+      <div class="logo-hex" style="border:none;background:transparent;box-shadow:none;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="var(--primary)" stroke-width="2" fill="none"/>
+          <rect x="7" y="7" width="8" height="10" rx="1" stroke="var(--primary)" stroke-width="1.5" fill="none"/>
+          <line x1="9" y1="10" x2="13" y2="10" stroke="var(--primary)" stroke-width="1.5"/>
+          <line x1="9" y1="13" x2="13" y2="13" stroke="var(--primary)" stroke-width="1.5"/>
+          <circle cx="17" cy="17" r="4" stroke="currentColor" stroke-width="2" fill="var(--bg)"/>
+          <circle cx="17" cy="17" r="1.5" fill="currentColor"/>
+          <line x1="19.8" y1="19.8" x2="23" y2="23" stroke="currentColor" stroke-width="2.5"/>
+        </svg>
+      </div>
+      <span class="logo-text">sentinal<span class="dot">.</span>legal</span>
+    </div>
+    <nav class="nav-center">
+      <a class="nav-link active" onclick="showPage('home',this)" data-en="Home" data-hi="होम">Home</a>
+      <a class="nav-link" onclick="showPage('about',this)" data-en="About" data-hi="परिचय">About</a>
+      <a class="nav-link" onclick="showPage('docs',this); loadHistory()" data-en="Docs" data-hi="दस्तावेज़">Docs</a>
+    </nav>
+    <div class="nav-right">
+      <div class="status-chip local" id="statusChip" onclick="toggleMode()" title="Click to switch mode">
+        <span class="sdot"></span>
+        <span id="statusTxt">LOCAL</span>
+      </div>
+      
+      <button class="lang-btn" onclick="toggleTheme()" id="themeBtn" title="Toggle Theme" style="padding:7px 9px;">
+        <svg id="theme-icon-dark" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg id="theme-icon-light" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
+      <div class="lang-wrap">
+        <button class="lang-btn" onclick="toggleLangDD()" id="langBtn">
+          <span id="langFlag">🇬🇧</span>
+          <span id="langLabel">EN</span>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l3 3 3-3"/></svg>
+        </button>
+        <div class="lang-dropdown" id="langDD">
+          <div class="lang-opt active" id="opt-en" onclick="setLang('en')"><span class="lang-flag">🇬🇧</span> English</div>
+          <div class="lang-opt" id="opt-hi" onclick="setLang('hi')"><span class="lang-flag">🇮🇳</span> हिंदी</div>
+        </div>
+      </div>
+      <button class="login-btn" onclick="openLogin()" id="header-login-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        <span data-en="Sign In" data-hi="साइन इन">Sign In</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="pg-home">
+    <div class="hero">
+      <div class="eyebrow" data-en="Privacy-First Legal AI" data-hi="गोपनीयता-प्रथम कानूनी AI">Privacy-First Legal AI</div>
+      <h1 data-en="KNOW WHAT<br/>YOU'RE <span class='acc'>SIGNING</span>" data-hi="जानें क्या<br/>आप <span class='acc'>हस्ताक्षर</span> कर रहे हैं">KNOW WHAT<br/>YOU'RE <span class="acc">SIGNING</span></h1>
+      <p class="hero-sub" data-en="Upload any contract. Surface hidden risks in plain English — entirely on your device, or via cloud for deeper analysis." data-hi="कोई भी अनुबंध अपलोड करें। सरल भाषा में छिपे जोखिमों को उजागर करें — पूरी तरह आपके डिवाइस पर, या गहरे विश्लेषण के लिए क्लाउड पर।">Upload any contract. Surface hidden risks in plain English — entirely on your device, or via cloud for deeper analysis.</p>
+      <div class="badge-row">
+        <span class="badge" data-en="Zero Data Leaks" data-hi="शून्य डेटा लीक"><span class="bd" style="background:var(--primary);box-shadow:0 0 6px var(--primary)"></span>Zero Data Leaks</span>
+        <span class="badge" data-en="AI Powered" data-hi="AI संचालित"><span class="bd" style="background:#6b8cff;box-shadow:0 0 6px #6b8cff"></span>AI Powered</span>
+        <span class="badge" data-en="Plain English" data-hi="सरल भाषा"><span class="bd" style="background:var(--safe);box-shadow:0 0 6px var(--safe)"></span>Plain English</span>
+      </div>
+    </div>
+
+    <div class="g-card glass mode-card" id="modeCard">
+      <div>
+        <div class="mode-title" id="mlbl">🔒 Local Mode — Privacy First</div>
+        <div class="mode-desc" id="mdsc">Runs on your device via Ollama. Zero data leaves your machine.</div>
+      </div>
+      <label class="tw">
+        <input type="checkbox" id="mtog"/>
+        <div class="tt"><div class="th"></div></div>
+      </label>
+    </div>
+
+    <div class="input-tabs">
+      <button class="itab active" id="tab-pdf" onclick="switchInput('pdf')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span data-en="PDF" data-hi="PDF">PDF</span>
+      </button>
+      <button class="itab" id="tab-img" onclick="switchInput('img')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span data-en="Photo" data-hi="फ़ोटो">Photo</span>
+      </button>
+      <button class="itab" id="tab-txt" onclick="switchInput('txt')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="13" y1="18" x2="3" y2="18"/></svg>
+        <span data-en="Text" data-hi="टेक्स्ट">Text</span>
+      </button>
+    </div>
+
+    <div id="dz" onclick="document.getElementById('fi').click()">
+      <input type="file" id="fi" accept=".pdf,.txt" style="display:none" onclick="event.stopPropagation()"/>
+      <div class="cm cm-tl"></div><div class="cm cm-tr"></div>
+      <div class="cm cm-bl"></div><div class="cm cm-br"></div>
+      <div class="dzi">
+        <div class="dz-ring"></div>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7a809f" stroke-width="1.5">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <div class="dz-ttl" data-en="Drop your contract PDF or Text" data-hi="अपना अनुबंध PDF या टेक्स्ट यहाँ डालें">Drop your contract PDF or Text</div>
+      <div class="dz-sub" data-en="or click to browse · PDF, TXT" data-hi="या ब्राउज़ करने के लिए क्लिक करें · PDF, TXT">or click to browse · PDF, TXT</div>
+      <div id="fn"></div>
+    </div>
+
+    <div id="imgdz" onclick="document.getElementById('imgfi').click()">
+      <input type="file" id="imgfi" accept="image/*" style="display:none" onclick="event.stopPropagation()"/>
+      <div class="cm cm-tl" style="border-color:rgba(107,140,255,.35)"></div>
+      <div class="cm cm-tr" style="border-color:rgba(107,140,255,.35)"></div>
+      <div class="cm cm-bl" style="border-color:rgba(107,140,255,.35)"></div>
+      <div class="cm cm-br" style="border-color:rgba(107,140,255,.35)"></div>
+      <img id="imgpreview" src="" alt="Preview"/>
+      <div id="imgplaceholder">
+        <div class="imgdz-inner">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7a809f" stroke-width="1.5" stroke-linecap="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </div>
+        <div class="dz-ttl" data-en="Drop a photo of your contract" data-hi="अपने अनुबंध की फ़ोटो यहाँ डालें">Drop a photo of your contract</div>
+        <div class="dz-sub" data-en="JPG, PNG, WEBP · OCR will extract text" data-hi="JPG, PNG, WEBP · OCR टेक्स्ट निकालेगा">JPG, PNG, WEBP · OCR will extract text</div>
+      </div>
+      <div id="imgfn" style="display:none;margin-top:12px;font-family:'Fragment Mono',monospace;font-size:12px;color:var(--blue);background:rgba(107,140,255,.08);border:1px solid rgba(107,140,255,.2);padding:5px 14px;border-radius:20px;width:fit-content;margin-left:auto;margin-right:auto;animation:riseIn .3s ease"></div>
+    </div>
+
+    <div id="txtarea">
+      <div class="txt-wrap">
+        <div class="txt-toolbar">
+          <div class="txt-label">
+            <span class="txt-dot"></span>
+            <span data-en="Contract Text" data-hi="अनुबंध टेक्स्ट">Contract Text</span>
+          </div>
+          <span id="txtcount">0 chars</span>
+        </div>
+        <textarea id="txtinput" placeholder="Paste your contract text here…" oninput="onTxtInput()"></textarea>
+        <div class="txt-footer">
+          <div class="txt-hint">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span data-en="Minimum 100 characters for accurate analysis" data-hi="सटीक विश्लेषण के लिए न्यूनतम 100 अक्षर">Minimum 100 characters for accurate analysis</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button id="abtn" onclick="handleAnalyze()" disabled data-en="⚡ ANALYZE CONTRACT" data-hi="⚡ अनुबंध विश्लेषण करें">⚡ ANALYZE CONTRACT</button>
+
+    <div id="loading">
+      <div class="glass lcard">
+        <div style="display:flex;align-items:center">
+          <div class="ldots"><div class="ldot"></div><div class="ldot"></div><div class="ldot"></div></div>
+          <span id="lmsg" data-en="Initializing scanner..." data-hi="स्कैनर प्रारंभ हो रहा है...">Initializing scanner...</span>
+        </div>
+        <div class="sw"><div class="sb"></div></div>
+        <div class="shims">
+          <div class="shim" style="width:88%"></div>
+          <div class="shim" style="width:72%;animation-delay:.3s"></div>
+          <div class="shim" style="width:80%;animation-delay:.6s"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="results">
+      <div class="slbl" style="margin-top:8px" data-en="Analysis Complete" data-hi="विश्लेषण पूर्ण">Analysis Complete</div>
+      <div class="glass scard">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="var(--primary)"><circle cx="6" cy="6" r="6"/><path d="M4 6l2 2 3-3" stroke="var(--void)" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+          <span style="font-family:'Fragment Mono',monospace;font-size:10px;color:var(--primary);text-transform:uppercase;letter-spacing:.16em" data-en="AI Summary" data-hi="AI सारांश">AI Summary</span>
+        </div>
+        <div id="stxt"></div>
+      </div>
+
+      <!-- Power Balance -->
+      <div class="glass scard" id="pb-card">
+        <div class="slbl" style="margin-bottom:16px" data-en="Power Balance Analysis" data-hi="शक्ति संतुलन विश्लेषण">Power Balance Analysis</div>
+        <div id="power-balance-content"></div>
+      </div>
+
+      <div class="gdiv"></div>
+      <div class="slbl" data-en="Risk Breakdown" data-hi="जोखिम विवरण">Risk Breakdown</div>
+      <div class="sbar" id="sbar"></div>
+
+      <!-- TABS -->
+      <div class="rtabrow">
+        <button class="rtabbtn active" id="rtab-risks" onclick="switchRTab('risks')" data-en="⚠ Clauses" data-hi="⚠ धाराएँ">⚠ Clauses</button>
+        <button class="rtabbtn" id="rtab-heatmap" onclick="switchRTab('heatmap')" data-en="🗺 Risk Map" data-hi="🗺 जोखिम मैप">🗺 Risk Map</button>
+        <button class="rtabbtn" id="rtab-rights" onclick="switchRTab('rights')" data-en="🛡 Rights Waived" data-hi="🛡 छोड़े गए अधिकार">🛡 Rights Waived</button>
+        <button class="rtabbtn" id="rtab-strategy" onclick="switchRTab('strategy')" data-en="🎯 Strategy" data-hi="🎯 रणनीति">🎯 Strategy</button>
+        <button class="rtabbtn" id="rtab-compare" onclick="switchRTab('compare')" data-en="📊 Benchmark" data-hi="📊 बेंचमार्क">📊 Benchmark</button>
+        <button class="rtabbtn" id="rtab-chat" onclick="switchRTab('chat')" data-en="💬 Ask AI" data-hi="💬 AI से पूछें">💬 Ask AI</button>
+      </div>
+
+      <!-- TAB CONTENT -->
+      
+      <!-- RISKS -->
+      <div id="panel-risks" class="rtab-panel active">
+        <div id="blind-spots-section" style="display:none;margin-bottom:20px;">
+          <div class="slbl" style="color:var(--warn)" data-en="Missing Protections" data-hi="अनुपस्थित सुरक्षा">Missing Protections</div>
+          <div id="blind-spots-container" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+        <div class="rcards" id="rcon"></div>
+      </div>
+
+      <!-- HEATMAP -->
+      <div id="panel-heatmap" class="rtab-panel">
+        <p style="font-family:'Fragment Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:16px;" data-en="Clause-by-clause risk surface — click to jump to full analysis" data-hi="धारा-दर-धारा जोखिम सतह — पूर्ण विश्लेषण पर जाने के लिए क्लिक करें">Clause-by-clause risk surface — click to jump to full analysis</p>
+        <div id="heatmap-grid" style="display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));"></div>
+      </div>
+
+      <!-- RIGHTS -->
+      <div id="panel-rights" class="rtab-panel">
+        <p style="font-family:'Fragment Mono',monospace;font-size:11px;color:var(--danger);margin-bottom:16px;text-transform:uppercase;letter-spacing:.1em;" data-en="Rights You Are Signing Away" data-hi="अधिकार जो आप छोड़ रहे हैं">Rights You Are Signing Away</p>
+        <div id="rights-container"></div>
+      </div>
+
+      <!-- STRATEGY -->
+      <div id="panel-strategy" class="rtab-panel">
+        <p style="font-family:'Fragment Mono',monospace;font-size:11px;color:var(--primary);margin-bottom:16px;text-transform:uppercase;letter-spacing:.1em;" data-en="Your Negotiation Playbook" data-hi="आपकी बातचीत की रणनीति">Your Negotiation Playbook</p>
+        <div id="strategy-content"></div>
+      </div>
+
+      <!-- BENCHMARK -->
+      <div id="panel-compare" class="rtab-panel">
+        <p style="font-family:'Fragment Mono',monospace;font-size:11px;color:var(--intel);margin-bottom:16px;text-transform:uppercase;letter-spacing:.1em;" data-en="Industry Benchmark Comparison" data-hi="उद्योग बेंचमार्क तुलना">Industry Benchmark Comparison</p>
+        <div class="glass scard" id="compare-container" style="padding:0 24px;"></div>
+      </div>
+
+      <!-- CHAT AI -->
+      <div id="panel-chat" class="rtab-panel">
+        <p style="font-family:'Fragment Mono',monospace;font-size:11px;color:var(--primary);margin-bottom:16px;text-transform:uppercase;letter-spacing:.1em;" data-en="Ask Your AI Legal Assistant" data-hi="अपने AI कानूनी सहायक से पूछें">Ask Your AI Legal Assistant</p>
+        <div class="chat-area" id="chat-messages">
+          <div class="chat-b chat-ai">👋 Hi! I've analyzed your contract. Ask me anything about it.</div>
+        </div>
+        <div class="chat-inp-wrap">
+          <input type="text" id="chat-input" class="chat-inp" placeholder="Ask about any clause..." data-en-placeholder="Ask about any clause..." data-hi-placeholder="किसी भी धारा के बारे में पूछें..." onkeydown="if(event.key==='Enter')sendChat()"/>
+          <button class="chat-btn" id="chat-send-btn" onclick="sendChat()" data-en="ASK →" data-hi="पूछें →">ASK →</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+          <button onclick="quickAsk('What are the biggest risks?')" class="ppill ppl" style="background:transparent;cursor:pointer;" data-en="Biggest risks?" data-hi="सबसे बड़े जोखिम?">Biggest risks?</button>
+          <button onclick="quickAsk('What rights am I waiving?')" class="ppill ppl" style="background:transparent;cursor:pointer;" data-en="Rights waived?" data-hi="छोड़े गए अधिकार?">Rights waived?</button>
+          <button onclick="quickAsk('Is this enforceable?')" class="ppill ppl" style="background:transparent;cursor:pointer;" data-en="Enforceable?" data-hi="क्या यह लागू करने योग्य है?">Enforceable?</button>
+          <button onclick="quickAsk('Can I negotiate this?')" class="ppill ppl" style="background:transparent;cursor:pointer;" data-en="Can I negotiate this?" data-hi="क्या मैं इस पर बातचीत कर सकता हूँ?">Can I negotiate this?</button>
+          <button onclick="quickAsk('Explain like I\'m 5')" class="ppill ppl" style="background:transparent;cursor:pointer;" data-en="Explain simply" data-hi="मुझे आसान शब्दों में समझाएँ">Explain simply</button>
+          <button onclick="quickAsk('Any hidden fees?')" class="ppill ppl" style="background:transparent;cursor:pointer;" data-en="Hidden fees?" data-hi="कोई छिपे हुए शुल्क?">Hidden fees?</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="verdict"></div>
+    <div style="display:flex;gap:12px;margin-top:28px">
+      <button class="devbtn" style="margin:0;" onclick="renderMock()" data-en="⚡ preview mock output" data-hi="⚡ नमूना आउटपुट देखें">⚡ preview mock output</button>
+      <button class="devbtn" style="margin:0;display:none" id="exportBtn" onclick="downloadReport()" data-en="↓ Export Report" data-hi="↓ रिपोर्ट निर्यात करें">↓ Export Report</button>
+    </div>
+  </main>
+
+  <main id="pg-about" style="display:none">
+    <div style="opacity:0;animation:riseIn .6s ease .1s forwards">
+      <div class="eyebrow" style="opacity:1;animation:none" data-en="About sentinal.legal" data-hi="sentinal.legal के बारे में">About sentinal.legal</div>
+      <h1 style="opacity:1;animation:none" data-en="THE MISSION<span class='acc'>.</span>" data-hi="हमारा <span class='acc'>मिशन</span>">THE MISSION<span class="acc">.</span></h1>
+    </div>
+    <div class="glass g-card" style="padding:28px 30px;margin-bottom:18px;margin-top:0;border-radius:20px;opacity:0;animation:riseIn .6s ease .25s forwards">
+      <p style="font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:16px" data-en="sentinal.legal was built for one reason: <strong style='color:var(--text)'>people shouldn't need a law degree to understand what they're signing.</strong>" data-hi="sentinal.legal एक ही कारण से बनाया गया: <strong style='color:var(--text)'>लोगों को यह समझने के लिए कानून की डिग्री की ज़रूरत नहीं होनी चाहिए कि वे क्या हस्ताक्षर कर रहे हैं।</strong>">sentinal.legal was built for one reason: <strong style="color:var(--text)">people shouldn't need a law degree to understand what they're signing.</strong></p>
+      <p style="font-size:14px;color:var(--text2);line-height:1.8" data-en="We use AI to scan contracts and surface hidden clauses in plain English." data-hi="हम AI का उपयोग करके अनुबंधों को स्कैन करते हैं और छिपी हुई धाराओं को सरल भाषा में उजागर करते हैं।">We use AI to scan contracts and surface hidden clauses in plain English.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;opacity:0;animation:riseIn .6s ease .4s forwards">
+      <div class="glass g-card" style="padding:22px;text-align:center;border-radius:18px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--primary);filter:drop-shadow(0 0 12px rgba(var(--primary-rgb),.4))">100%</div>
+        <div style="font-family:'Fragment Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px" data-en="Privacy First" data-hi="गोपनीयता प्रथम">Privacy First</div>
+      </div>
+      <div class="glass g-card" style="padding:22px;text-align:center;border-radius:18px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--blue);filter:drop-shadow(0 0 12px rgba(107,140,255,.4))">2s</div>
+        <div style="font-family:'Fragment Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px" data-en="Avg Analysis" data-hi="औसत विश्लेषण">Avg Analysis</div>
+      </div>
+      <div class="glass g-card" style="padding:22px;text-align:center;border-radius:18px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--safe);filter:drop-shadow(0 0 12px rgba(0,229,160,.4))">∞</div>
+        <div style="font-family:'Fragment Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px" data-en="Contracts" data-hi="अनुबंध">Contracts</div>
+      </div>
+    </div>
+    <div class="glass g-card" style="padding:24px 28px;border-radius:18px;opacity:0;animation:riseIn .6s ease .55s forwards">
+      <div style="font-family:'Fragment Mono',monospace;font-size:10px;color:var(--primary);text-transform:uppercase;letter-spacing:.16em;margin-bottom:10px" data-en="Built at Hack Helix · 2026" data-hi="Hack Helix पर निर्मित · 2026">Built at Hack Helix · 2026</div>
+      <p style="font-size:13px;color:var(--ghost);line-height:1.7" data-en="An open-source project. Local mode uses Ollama. Cloud mode uses Groq (Llama 3 70B). No contract data is ever stored or logged." data-hi="एक ओपन-सोर्स प्रोजेक्ट। लोकल मोड Ollama का उपयोग करता है। क्लाउड मोड Groq (Llama 3 70B) का उपयोग करता है। कोई भी अनुबंध डेटा कभी संग्रहीत या लॉग नहीं किया जाता।">An open-source project. Local mode uses Ollama. Cloud mode uses Groq (Llama 3 70B). No contract data is ever stored or logged.</p>
+    </div>
+    <button class="devbtn" style="margin-top:28px" onclick="showPage('home')" data-en="← Back to App" data-hi="← ऐप पर वापस">← Back to App</button>
+  </main>
+
+  <main id="pg-docs" style="display:none">
+    <div style="opacity:0;animation:riseIn .6s ease .1s forwards">
+      <div class="eyebrow" style="opacity:1;animation:none" data-en="Your Documents" data-hi="आपके दस्तावेज़">Your Documents</div>
+      <h1 style="opacity:1;animation:none" data-en="HISTORY<span class='acc'>.</span>" data-hi="इतिहास<span class='acc'>.</span>">HISTORY<span class="acc">.</span></h1>
+    </div>
+    <div id="history-list" style="display:flex;flex-direction:column;gap:14px;margin-top:20px;opacity:0;animation:riseIn .6s ease .25s forwards">
+      <!-- History items will be injected here -->
+    </div>
+    <button class="devbtn" style="margin-top:28px" onclick="showPage('home')" data-en="← Back to App" data-hi="← ऐप पर वापस">← Back to App</button>
+  </main>
+
+  <!-- RISK POPUP -->
+  <div id="rov">
+    <div class="ovbg" onclick="closePop()"></div>
+    <div id="pbox" class="pbox">
+      <div class="pband">
+        <span id="pico" class="pico"></span>
+        <div id="ptit" class="ptit"></div>
+        <div id="ptag" class="ptag"></div>
+      </div>
+      <div class="pbody">
+        <div id="ppills" class="ppills"></div>
+        <p id="pmsg" class="pmsg"></p>
+        <div id="ptip" class="ptip"></div>
+        <button onclick="closePop()" id="pcta" class="pcta"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div id="lov">
+    <div class="lbg" onclick="closeLogin()"></div>
+    <div class="lbox">
+      <div class="lclose" onclick="closeLogin()">✕</div>
+      <div class="ltop">
+        <div class="llgo" style="border:none;background:transparent;box-shadow:none;">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="var(--primary)" stroke-width="2" fill="none"/>
+            <rect x="7" y="7" width="8" height="10" rx="1" stroke="var(--primary)" stroke-width="1.5" fill="none"/>
+            <line x1="9" y1="10" x2="13" y2="10" stroke="var(--primary)" stroke-width="1.5"/>
+            <line x1="9" y1="13" x2="13" y2="13" stroke="var(--primary)" stroke-width="1.5"/>
+            <circle cx="17" cy="17" r="4" stroke="currentColor" stroke-width="2" fill="var(--bg)"/>
+            <circle cx="17" cy="17" r="1.5" fill="currentColor"/>
+            <line x1="19.8" y1="19.8" x2="23" y2="23" stroke="currentColor" stroke-width="2.5"/>
+          </svg>
+        </div>
+        <div class="ltit">sentinal<span>.</span>legal</div>
+        <div class="lsub" id="lsub">Sign in to your account</div>
+      </div>
+      <div class="lbody">
+        <div class="tabrow">
+          <button class="tabbtn active" id="tl" onclick="switchTab('in')" data-en="Sign In" data-hi="साइन इन">Sign In</button>
+          <button class="tabbtn" id="ts" onclick="switchTab('up')" data-en="Create Account" data-hi="खाता बनाएँ">Create Account</button>
+        </div>
+        <div id="fin">
+          <label class="flbl" data-en="Email Address" data-hi="ईमेल पता">Email Address</label>
+          <input class="finp" id="li-email" type="email" placeholder="you@example.com" data-en-placeholder="you@example.com" data-hi-placeholder="आप@example.com"/>
+          <label class="flbl" data-en="Password" data-hi="पासवर्ड">Password</label>
+          <input class="finp" id="li-pass" type="password" placeholder="••••••••" data-en-placeholder="••••••••" data-hi-placeholder="••••••••"/>
+          <a class="flink" data-en="Forgot password?" data-hi="पासवर्ड भूल गए?">Forgot password?</a>
+          <div id="li-err" style="color:var(--danger);font-size:12px;margin-bottom:10px;display:none"></div>
+          <button class="lcta" id="li-btn" onclick="handleLogin()" data-en="SIGN IN" data-hi="साइन इन">SIGN IN</button>
+        </div>
+        <div id="fup" style="display:none">
+          <label class="flbl" data-en="Full Name" data-hi="पूरा नाम">Full Name</label>
+          <input class="finp" id="su-name" type="text" placeholder="Jane Smith" data-en-placeholder="Jane Smith" data-hi-placeholder="जेन स्मिथ"/>
+          <label class="flbl" data-en="Email Address" data-hi="ईमेल पता">Email Address</label>
+          <input class="finp" id="su-email" type="email" placeholder="you@example.com" data-en-placeholder="you@example.com" data-hi-placeholder="आप@example.com"/>
+          <label class="flbl" data-en="Password" data-hi="पासवर्ड">Password</label>
+          <input class="finp" id="su-pass" type="password" placeholder="Min. 8 characters" data-en-placeholder="Min. 8 characters" data-hi-placeholder="न्यूनतम 8 अक्षर"/>
+          <div id="su-err" style="color:var(--danger);font-size:12px;margin-bottom:10px;display:none"></div>
+          <button class="lcta" id="su-btn" onclick="handleSignup()" data-en="CREATE ACCOUNT" data-hi="खाता बनाएँ">CREATE ACCOUNT</button>
+        </div>
+        <div class="orr"><div class="orl"></div><span class="ort" data-en="OR CONTINUE WITH" data-hi="या इसके साथ जारी रखें">OR CONTINUE WITH</span><div class="orl"></div></div>
+        <div class="sbtns">
+          <button class="sbtn" onclick="simulateSocialLogin('Google')">
+            <svg width="15" height="15" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            <span data-en="Google" data-hi="गूगल">Google</span>
+          </button>
+          <button class="sbtn" onclick="simulateSocialLogin('GitHub')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            <span data-en="GitHub" data-hi="गिटहब">GitHub</span>
+          </button>
+          <button class="sbtn" onclick="simulateSocialLogin('Microsoft')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="9" height="9" fill="#F25022"/><rect x="13" y="2" width="9" height="9" fill="#7FBA00"/><rect x="2" y="13" width="9" height="9" fill="#00A4EF"/><rect x="13" y="13" width="9" height="9" fill="#FFB900"/></svg>
+            <span data-en="Microsoft" data-hi="माइक्रोसॉफ्ट">Microsoft</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div class="hpill"><div class="hd" id="hd"></div><span id="hdtxt"></span></div>
+    <div class="hpill" style="font-size:10px;color:var(--muted)">sentinal.legal · v1.0</div>
+  </div>
+
+  <script>
+    (function(){
+      const c=document.getElementById('bg-canvas');
+      const ctx=c.getContext('2d');let W,H,t=0;
+      function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+      resize();window.addEventListener('resize',resize);
+      const orbs=[
+        {x:.5,y:-.05,r:.32,col:'rgba(66, 133, 244, 0.08)',sp:0},
+        {x:.85,y:.65,r:.2,col:'rgba(155, 114, 203, 0.07)',sp:.0008},
+        {x:.1,y:.55,r:.18,col:'rgba(217, 101, 112, 0.05)',sp:.0006},
+        {x:.5,y:1.05,r:.25,col:'rgba(66, 133, 244, 0.05)',sp:.0005}
+      ];
+      function draw(){
+        ctx.clearRect(0,0,W,H);t+=.01;
+        orbs.forEach((o,i)=>{const oy=o.y+Math.sin(t*o.sp*1000+i)*.04;const g=ctx.createRadialGradient(o.x*W,oy*H,0,o.x*W,oy*H,o.r*Math.max(W,H));g.addColorStop(0,o.col);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,W,H)});
+        const img=ctx.createImageData(W,H);for(let i=0;i<img.data.length;i+=16){const v=Math.random()*14;img.data[i]=img.data[i+1]=img.data[i+2]=v;img.data[i+3]=10}ctx.putImageData(img,0,0);
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    const API_BASE_URL = 'http://127.0.0.1:8000';
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let txt='',mode='cloud',inputMode='pdf',currentLang='en';
+    let resultsData = null, contractContext = '';
+    let originalReport = null;
+
+    
+    function toggleTheme() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      document.documentElement.setAttribute('data-theme', isLight ? 'dark' : 'light');
+      document.getElementById('theme-icon-dark').style.display = isLight ? 'block' : 'none';
+      document.getElementById('theme-icon-light').style.display = isLight ? 'none' : 'block';
+    }
+
+    /* ── LANGUAGE SYSTEM ── */
+    const TRANSLATIONS = {
+      en: {
+        loaderMsgs: ['📄 Parsing document structure...','🔍 Identifying key clauses...','⚖️  Cross-referencing legal patterns...','🛡️  Scoring risk surfaces...','📊 Assembling your report...'],
+        highRisk:'High Risk', medRisk:'Med Risk', lowRisk:'Low Risk',
+        noRisks:'No significant risks detected.',
+        riskLevels:{High:'High',Medium:'Medium',Low:'Low'},
+        verdictLabels:{high:'High Risk — Seek Legal Advice',medium:'Moderate Risk — Negotiate Terms',low:'Low Risk — Generally Safe',safe:'Clean — No Significant Risks'},
+        popup:{
+          high:{tag:'Critical — Action Required',tit:'HIGH RISK DETECTED',msg:"This contract contains clauses that could seriously affect your rights, income, or legal standing.",tip:'⚠ Highlight all red-flagged clauses and request amendments before signing.',btn:'Review high risk clauses →'},
+          medium:{tag:'Caution — Review Carefully',tit:'MEDIUM RISK FOUND',msg:'No critical red flags, but several clauses could work against you over time.',tip:'◈ Focus on orange clauses — worth negotiating before you sign.',btn:'Review medium risk clauses →'},
+          low:{tag:'Minor Issues — Stay Informed',tit:'LOW RISK ONLY',msg:'The contract looks mostly reasonable. A few minor clauses are worth reading.',tip:'◇ Even low-risk clauses have implications — know what you agree to.',btn:'Review low risk clauses →'},
+          safe:{tag:'All Clear — No Risks Found',tit:'CONTRACT IS CLEAN',msg:'No significant risks detected. This contract appears balanced and fair.',tip:'✦ Always read the full document yourself even when AI gives the all-clear.',btn:'View full analysis →'}
+        }
+      },
+      hi: {
+        loaderMsgs: ['📄 दस्तावेज़ संरचना पार्स हो रही है...','🔍 मुख्य धाराओं की पहचान हो रही है...','⚖️  कानूनी पैटर्न की जाँच हो रही है...','🛡️  जोखिम की गणना हो रही है...','📊 रिपोर्ट तैयार हो रही है...'],
+        highRisk:'उच्च जोखिम', medRisk:'मध्यम जोखिम', lowRisk:'कम जोखिम',
+        noRisks:'कोई महत्वपूर्ण जोखिम नहीं मिला।',
+        riskLevels:{High:'उच्च',Medium:'मध्यम',Low:'कम'},
+        verdictLabels:{high:'उच्च जोखिम — कानूनी सलाह लें',medium:'मध्यम जोखिम — शर्तें बातचीत करें',low:'कम जोखिम — सामान्यतः सुरक्षित',safe:'स्वच्छ — कोई महत्वपूर्ण जोखिम नहीं'},
+        popup:{
+          high:{tag:'गंभीर — तत्काल कार्रवाई आवश्यक',tit:'उच्च जोखिम मिला',msg:'इस अनुबंध में ऐसी धाराएँ हैं जो आपके अधिकारों, आय या कानूनी स्थिति को गंभीर रूप से प्रभावित कर सकती हैं।',tip:'⚠ हस्ताक्षर करने से पहले सभी लाल-चिह्नित धाराओं को हाइलाइट करें और संशोधन माँगें।',btn:'उच्च जोखिम धाराएँ देखें →'},
+          medium:{tag:'सावधानी — ध्यान से पढ़ें',tit:'मध्यम जोखिम मिला',msg:'कोई गंभीर समस्या नहीं, लेकिन कुछ धाराएँ समय के साथ आपके विरुद्ध काम कर सकती हैं।',tip:'◈ नारंगी धाराओं पर ध्यान दें — हस्ताक्षर से पहले बातचीत करना उचित है।',btn:'मध्यम जोखिम धाराएँ देखें →'},
+          low:{tag:'मामूली समस्याएँ — जागरूक रहें',tit:'केवल कम जोखिम',msg:'अनुबंध अधिकतर उचित लगता है। कुछ मामूली धाराएँ पढ़ने लायक हैं।',tip:'◇ कम जोखिम वाली धाराओं के भी निहितार्थ होते हैं — जानें कि आप किससे सहमत हैं।',btn:'कम जोखिम धाराएँ देखें →'},
+          safe:{tag:'सब ठीक है — कोई जोखिम नहीं',tit:'अनुबंध स्वच्छ है',msg:'कोई महत्वपूर्ण जोखिम नहीं मिला। यह अनुबंध संतुलित और उचित लगता है।',tip:'✦ AI की मंजूरी के बावजूद हमेशा पूरा दस्तावेज़ खुद पढ़ें।',btn:'पूरा विश्लेषण देखें →'}
+        }
+      }
+    };
+
+    function setLang(lang) {
+      currentLang = lang;
+      document.getElementById('langDD').classList.remove('open');
+      document.getElementById('opt-en').classList.toggle('active', lang==='en');
+      document.getElementById('opt-hi').classList.toggle('active', lang==='hi');
+      document.getElementById('langFlag').textContent = lang==='en' ? '🇬🇧' : '🇮🇳';
+      document.getElementById('langLabel').textContent = lang==='en' ? 'EN' : 'HI';
+      document.querySelectorAll('[data-en]').forEach(el => {
+        const val = el.getAttribute('data-'+lang);
+        if(val) el.innerHTML = val;
+      });
+      document.querySelectorAll('[data-en-placeholder]').forEach(el => {
+        const val = el.getAttribute('data-'+lang+'-placeholder');
+        if(val) el.setAttribute('placeholder', val);
+      });
+      updateModeCard();
+      const btn = document.getElementById('abtn');
+      if(btn.disabled && !txt) {
+        btn.textContent = lang==='en' ? '⚡ ANALYZE CONTRACT' : '⚡ अनुबंध विश्लेषण करें';
+      }
+      
+      // re-render if data is loaded
+      if (resultsData) {
+        if (resultsData._lang !== lang && resultsData.summary) {
+          translateResults(lang);
+        } else {
+          renderResults(resultsData);
+        }
+      }
+    }
+
+    function toggleLangDD() { document.getElementById('langDD').classList.toggle('open'); }
+    document.addEventListener('click', e => { if(!e.target.closest('.lang-wrap')) document.getElementById('langDD').classList.remove('open'); });
+
+    function toggleMode() {
+      const tog = document.getElementById('mtog');
+      tog.checked = !tog.checked;
+      tog.dispatchEvent(new Event('change'));
+    }
+
+    function updateModeCard() {
+      const isCloud = mode === 'cloud';
+      const lbl = document.getElementById('mlbl');
+      const dsc = document.getElementById('mdsc');
+      const card = document.getElementById('modeCard');
+      if(currentLang === 'hi') {
+        lbl.textContent = isCloud ? '☁️  क्लाउड मोड — सटीकता' : '🔒 लोकल मोड — गोपनीयता प्रथम';
+        dsc.textContent = isCloud ? 'Groq (Llama 3 70B) द्वारा संचालित। तेज़ और अधिक गहन।' : 'Ollama के माध्यम से आपके डिवाइस पर चलता है। डेटा कहीं नहीं जाता।';
+      } else {
+        lbl.textContent = isCloud ? '☁️  Cloud Mode — Accuracy' : '🔒 Local Mode — Privacy First';
+        dsc.textContent = isCloud ? 'Powered by Groq (Llama 3 70B). Faster and more thorough.' : 'Runs on your device via Ollama. Zero data leaves your machine.';
+      }
+      card.classList.toggle('cloud-active', isCloud);
+    }
+
+    function updateStatusChip(){
+      const chip=document.getElementById('statusChip');
+      const label=document.getElementById('statusTxt');
+      if(mode==='cloud'){
+        chip.className='status-chip cloud';
+        label.textContent='CLOUD';
+      } else {
+        chip.className='status-chip local';
+        label.textContent='LOCAL';
+      }
+    }
+
+    document.getElementById('mtog').addEventListener('change',function(){
+      mode=this.checked?'cloud':'local';
+      updateModeCard();
+      updateStatusChip();
+    });
+    
+    // Set default mode UI based on `mode`
+    document.getElementById('mtog').checked = (mode === 'cloud');
+    updateModeCard(); updateStatusChip();
+
+    function switchInput(m){
+      inputMode=m;
+      document.getElementById('tab-pdf').classList.toggle('active',m==='pdf');
+      document.getElementById('tab-img').classList.toggle('active',m==='img');
+      document.getElementById('tab-txt').classList.toggle('active',m==='txt');
+      document.getElementById('dz').style.display=m==='pdf'?'block':'none';
+      document.getElementById('imgdz').style.display=m==='img'?'block':'none';
+      document.getElementById('txtarea').style.display=m==='txt'?'block':'none';
+      txt=''; contractContext='';
+      const btn=document.getElementById('abtn');
+      btn.disabled=true;
+      btn.textContent=currentLang==='hi'?'⚡ अनुबंध विश्लेषण करें':'⚡ ANALYZE CONTRACT';
+      if(m==='txt')onTxtInput();
+    }
+
+    function onTxtInput(){
+      const val=document.getElementById('txtinput').value.trim();
+      document.getElementById('txtcount').textContent=val.length+' chars';
+      if(val.length>=100){txt=val; contractContext=val; document.getElementById('abtn').disabled=false;document.getElementById('abtn').textContent=currentLang==='hi'?'⚡ पेस्ट किया टेक्स्ट विश्लेषण करें':'⚡ ANALYZE PASTED TEXT';}
+      else{txt=''; contractContext=''; document.getElementById('abtn').disabled=true;document.getElementById('abtn').textContent=currentLang==='hi'?'⚡ अनुबंध विश्लेषण करें':'⚡ ANALYZE CONTRACT';}
+    }
+
+    function showPage(id,el){
+      document.getElementById('pg-home').style.display=id==='home'?'':'none';
+      document.getElementById('pg-about').style.display=id==='about'?'':'none';
+      document.getElementById('pg-docs').style.display=id==='docs'?'':'none';
+      document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+      if(el)el.classList.add('active');
+    }
+
+    function openLogin(){document.getElementById('lov').classList.add('open');document.body.style.overflow='hidden'}
+    function closeLogin(){document.getElementById('lov').classList.remove('open');document.body.style.overflow=''}
+    function switchTab(t){
+      document.getElementById('fin').style.display=t==='in'?'':'none';
+      document.getElementById('fup').style.display=t==='up'?'':'none';
+      document.getElementById('tl').classList.toggle('active',t==='in');
+      document.getElementById('ts').classList.toggle('active',t==='up');
+      document.getElementById('lsub').textContent=t==='in'?
+        (currentLang==='hi'?'अपने खाते में साइन इन करें':'Sign in to your account'):
+        (currentLang==='hi'?'अपना निःशुल्क खाता बनाएँ':'Create your free account');
+    }
+
+    // Results Tab Switch
+    function switchRTab(id) {
+      document.querySelectorAll('.rtabbtn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.rtab-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('rtab-'+id).classList.add('active');
+      document.getElementById('panel-'+id).classList.add('active');
+    }
+
+    const dz=document.getElementById('dz'),fi=document.getElementById('fi');
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dov')});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('dov'));
+    dz.addEventListener('drop',e=>{
+      e.preventDefault();
+      dz.classList.remove('dov');
+      const f = e.dataTransfer.files[0];
+      if(!f) return;
+      if(f.type==='application/pdf') processPDF(f);
+      else if(f.type==='text/plain' || f.name.toLowerCase().endsWith('.txt')) processTxtFile(f);
+    });
+    fi.addEventListener('change',()=>{
+      const f = fi.files[0];
+      if(!f) return;
+      if(f.type==='application/pdf') processPDF(f);
+      else if(f.type==='text/plain' || f.name.toLowerCase().endsWith('.txt')) processTxtFile(f);
+    });
+
+    async function processTxtFile(file){
+      const fn=document.getElementById('fn');
+      fn.textContent='📄 '+file.name;fn.style.display='inline-flex';
+      const text = await file.text();
+      txt=text.trim(); contractContext=txt;
+      const btn=document.getElementById('abtn');btn.disabled=false;btn.textContent=`⚡ ANALYZE "${file.name.substring(0,28)}..."`;
+    }
+
+    async function processPDF(file){
+      const fn=document.getElementById('fn');
+      fn.textContent='📄 '+file.name;fn.style.display='inline-flex';
+      const ab=await file.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+      let out='';
+      for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const ct=await pg.getTextContent();out+=ct.items.map(x=>x.str).join(' ')+'\n'}
+      txt=out.trim(); contractContext=txt;
+      const btn=document.getElementById('abtn');btn.disabled=false;btn.textContent=`⚡ ANALYZE "${file.name.substring(0,28)}..."`;
+    }
+
+    const imgdz=document.getElementById('imgdz'),imgfi=document.getElementById('imgfi');
+    imgdz.addEventListener('dragover',e=>{e.preventDefault();imgdz.classList.add('dov')});
+    imgdz.addEventListener('dragleave',()=>imgdz.classList.remove('dov'));
+    imgdz.addEventListener('drop',e=>{e.preventDefault();imgdz.classList.remove('dov');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))processImage(f)});
+    imgfi.addEventListener('change',()=>{if(imgfi.files[0])processImage(imgfi.files[0])});
+
+    function processImage(file){
+      const prev=document.getElementById('imgpreview'),ph=document.getElementById('imgplaceholder'),fn=document.getElementById('imgfn');
+      const reader=new FileReader();
+      reader.onload=e=>{
+        prev.src=e.target.result;prev.style.display='block';ph.style.display='none';
+        fn.textContent='🖼 '+file.name;fn.style.display='block';
+        const btn=document.getElementById('abtn');
+        btn.disabled=true;
+        btn.textContent = currentLang==='hi' ? '⏳ टेक्स्ट निकाला जा रहा है...' : '⏳ EXTRACTING TEXT...';
+        
+        Tesseract.recognize(
+          file,
+          'eng',
+          { logger: m => {
+              if (m.status === 'recognizing text') {
+                btn.textContent = currentLang==='hi' ? `⏳ टेक्स्ट निकाला जा रहा है (${Math.round(m.progress*100)}%)` : `⏳ EXTRACTING TEXT (${Math.round(m.progress*100)}%)`;
+              }
+            } 
+          }
+        ).then(({ data: { text } }) => {
+          txt = text.trim();
+          contractContext = txt;
+          btn.disabled = false;
+          btn.textContent = currentLang==='hi' ? '⚡ अनुबंध विश्लेषण करें' : `⚡ ANALYZE "${file.name.substring(0,24)}..."`;
+        }).catch(err => {
+          console.error('OCR Error:', err);
+          btn.textContent = currentLang==='hi' ? '❌ OCR विफल' : '❌ OCR FAILED';
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function startLoader(){
+      const msgs=TRANSLATIONS[currentLang].loaderMsgs;
+      let i=0;document.getElementById('lmsg').textContent=msgs[0];
+      return setInterval(()=>{i=(i+1)%msgs.length;document.getElementById('lmsg').textContent=msgs[i]},3500);
+    }
+
+    async function handleAnalyze(){
+      if(!txt)return;
+      document.getElementById('results').classList.remove('vis');document.getElementById('results').style.display='none';
+      document.getElementById('verdict').innerHTML='';
+      document.getElementById('loading').style.display='block';document.getElementById('abtn').disabled=true;
+      const t=startLoader();
+      try{
+        const r=await fetch(API_BASE_URL+'/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:txt,mode,language:currentLang})});
+        if(!r.ok)throw new Error((await r.json()).detail||'Server error');
+        const data = await r.json();
+        data._lang = currentLang;
+        resultsData = data;
+        originalReport = JSON.parse(JSON.stringify(data));
+        saveToHistory(data);
+        renderResults(data);
+      }catch(e){alert(`Error: ${e.message}\n\nIs your FastAPI server running?\n  uvicorn main:app --reload`)}
+      finally{clearInterval(t);document.getElementById('loading').style.display='none';document.getElementById('abtn').disabled=false}
+    }
+
+    function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+    function bc(l){return l==='High'?'bh':l==='Medium'?'bm':'bl'}
+    function rc(l){return l==='High'?'rh':l==='Medium'?'rm':'rl'}
+
+    async function translateResults(targetLang) {
+      if (originalReport && originalReport._lang === targetLang) {
+        resultsData = JSON.parse(JSON.stringify(originalReport));
+        renderResults(resultsData);
+        return;
+      }
+      document.getElementById('results').style.display='none';
+      document.getElementById('verdict').innerHTML='';
+      document.getElementById('loading').style.display='block';
+      const t = startLoader();
+      try {
+        const r = await fetch(API_BASE_URL+'/translate_report', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ report: originalReport || resultsData, target_language: targetLang, mode: mode })
+        });
+        if (!r.ok) throw new Error("Translation failed");
+        resultsData = await r.json();
+        renderResults(resultsData);
+      } catch (e) {
+        console.error("Translation error", e);
+        renderResults(resultsData);
+      } finally {
+        clearInterval(t);
+        document.getElementById('loading').style.display='none';
+      }
+    }
+
+    function renderResults(data){
+      const T=TRANSLATIONS[currentLang];
+      
+      // Summary formatting (split by periods for visual spacing)
+      const rawSumm = (data.summary || '').trim();
+      const sents = rawSumm.match(/[^.!?]+[.!?]+/g) || [rawSumm];
+      document.getElementById('stxt').innerHTML = '';
+      for (let i = 0; i < sents.length; i += 2) {
+        const chunk = sents.slice(i, i+2).join(' ').trim();
+        if (!chunk) continue;
+        const p = document.createElement('p');
+        p.style.marginBottom = '10px';
+        p.textContent = chunk;
+        document.getElementById('stxt').appendChild(p);
+      }
+
+      // Counts and Score
+      const c={High:0,Medium:0,Low:0};
+      (data.risks||[]).forEach(r=>c[r.risk_level]=(c[r.risk_level]||0)+1);
+      
+      document.getElementById('sbar').innerHTML=[
+        {l:T.highRisk,n:c.High,cls:'sch',nc:'nh'},{l:T.medRisk,n:c.Medium,cls:'scm',nc:'nm'},{l:T.lowRisk,n:c.Low,cls:'scl',nc:'nl'}
+      ].map(s=>`<div class="sc ${s.cls}"><div class="sn ${s.nc}">${s.n}</div><div class="sl">${s.l}</div></div>`).join('');
+
+      renderPowerBalance(data);
+      renderRisks(data, T);
+      renderHeatmap(data);
+      renderRightsWaived(data, T);
+      renderStrategy(data);
+      renderComparison(data, T);
+      
+      document.getElementById('exportBtn').style.display='block';
+      document.getElementById('results').style.display='block';
+      document.getElementById('results').classList.add('vis');
+      document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+      updateHUD(c);
+      
+      // Re-initialize AI Chat
+      document.getElementById('chat-messages').innerHTML = `<div class="chat-b chat-ai">👋 ${currentLang==='hi'?'नमस्ते! मैंने आपके अनुबंध का विश्लेषण कर लिया है। आप मुझसे कोई भी प्रश्न पूछ सकते हैं।':'Hi! I have analyzed your contract. Ask me anything about it.'}</div>`;
+      
+      setTimeout(()=>showPop(c),700);
+    }
+
+    function renderPowerBalance(data) {
+      const score = typeof data.safety_score === 'number' ? data.safety_score : 50;
+      const userPct = Math.round(score);
+      const otherPct = 100 - userPct;
+      
+      const labels = data.contract_type?.toLowerCase().includes('lease') || data.contract_type?.toLowerCase().includes('rental')
+        ? ['Tenant (You)','Landlord']
+        : data.contract_type?.toLowerCase().includes('employ')
+          ? ['Employee (You)','Employer']
+          : ['You','Other Party'];
+
+      const userColor = userPct < 40 ? 'var(--danger)' : userPct < 55 ? 'var(--warn)' : 'var(--safe)';
+      const otherColor = otherPct > 60 ? 'var(--danger)' : 'var(--ghost)';
+      const msg = userPct < 35 ? (currentLang==='hi'?'🚨 आपके खिलाफ अत्यधिक झुकाव। बातचीत करें या अस्वीकार करें।':'🚨 Heavily skewed against you. Strong grounds to negotiate or reject.')
+                : userPct < 50 ? (currentLang==='hi'?'⚠️ मध्यम झुकाव। हस्ताक्षर से पहले मुख्य धाराओं पर वापस दबाव डालें।':'⚠️ Moderately skewed. Push back on key clauses before signing.')
+                : userPct < 65 ? (currentLang==='hi'?'📊 थोड़ा असंतुलित। हाइलाइट की गई धाराओं की सावधानीपूर्वक समीक्षा करें।':'📊 Slightly unbalanced. Review highlighted clauses carefully.')
+                : (currentLang==='hi'?'✅ अपेक्षाकृत संतुलित अनुबंध।':'✅ Relatively balanced contract.');
+
+      document.getElementById('power-balance-content').innerHTML = `
+        <div>
+          <div style="display:flex; justify-content:space-between; text-align:center;">
+            <div><p style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${userColor};">${userPct}%</p><p style="font-family:'Fragment Mono',monospace;font-size:10px;color:var(--muted);">${labels[0]}</p></div>
+            <div><p style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${otherColor};">${otherPct}%</p><p style="font-family:'Fragment Mono',monospace;font-size:10px;color:var(--muted);">${labels[1]}</p></div>
+          </div>
+          <div class="pb-track">
+            <div style="height:100%; width:${userPct}%; background:${userColor}; transition:width 1.4s cubic-bezier(.16,1,.3,1);"></div>
+            <div style="height:100%; width:${otherPct}%; background:rgba(var(--inv-rgb),.03); transition:width 1.4s cubic-bezier(.16,1,.3,1);"></div>
+          </div>
+          <p style="color:var(--ghost);font-size:13px;text-align:center;margin-top:8px">${msg}</p>
+        </div>`;
+    }
+
+    function renderRisks(data, T) {
+      const risks = data.risks || [];
+      const missing = data.missing_protections || [];
+      const bsSec = document.getElementById('blind-spots-section');
+      const FE = currentLang==='hi'?'💸 वित्तीय जोखिम':'💸 Financial Exposure';
+      const SR = currentLang==='hi'?'✏️ सुझाया गया सुधार':'✏️ Suggested Rewrite';
+      
+      if (missing.length > 0) {
+        document.getElementById('blind-spots-container').innerHTML = missing.map(p=>`<div style="background:rgba(255,140,66,.05);border:1px solid rgba(255,140,66,.2);padding:12px;border-radius:10px;color:var(--text2);font-size:13px;line-height:1.6;">${esc(p)}</div>`).join('');
+        bsSec.style.display = 'block';
+      } else bsSec.style.display = 'none';
+
+      document.getElementById('rcon').innerHTML = risks.length
+        ? risks.map((r,i) => {
+            const lbl = T.riskLevels[r.risk_level] || r.risk_level;
+            return `<div class="rcard ${rc(r.risk_level)}" id="risk-card-${i}">
+              <span class="rbdg ${bc(r.risk_level)}">${lbl}</span>
+              <div class="rcls">"${esc(r.clause)}"</div>
+              <div class="rcex">${esc(r.explanation)}</div>
+              ${r.financial_exposure?`<div class="expo-block"><span class="expo-tit">${FE}</span><p class="expo-txt">${esc(r.financial_exposure)}</p></div>`:''}
+              ${r.safe_rewrite?`<div class="rew-block"><span class="rew-tit">${SR}</span><p class="rew-txt">${esc(r.safe_rewrite)}</p></div>`:''}
+            </div>`;
+          }).join('')
+        : `<div class="glass" style="padding:24px;text-align:center;color:var(--muted);font-size:14px;border-radius:16px">${T.noRisks}</div>`;
+    }
+
+    function renderHeatmap(data) {
+      const risks = data.risks || [];
+      function matchRisk(clauseRaw) {
+        const ct = clauseRaw.toLowerCase();
+        let best = null, bestScore = 0;
+        for (const r of risks) {
+          const words = (r.clause||'').toLowerCase().split(/\s+/).filter(w=>w.length>4);
+          const score = words.filter(w=>ct.includes(w)).length;
+          if (score > bestScore) { bestScore = score; best = r; }
+        }
+        return bestScore >= 1 ? best : null;
+      }
+
+      const text = contractContext || '';
+      const sectionSplitRe = /(?:^|\n)\s*(\d+)\.\s+/gm;
+      const segments = [];
+      let m, last = 0, lastNum = 0;
+      while ((m = sectionSplitRe.exec(text)) !== null) {
+        if (lastNum > 0) segments.push({ num: lastNum, start: last, end: m.index });
+        lastNum = parseInt(m[1]);
+        last = m.index;
+      }
+      if (lastNum > 0) segments.push({ num: lastNum, start: last, end: text.length });
+
+      let cells = [];
+      if (segments.length >= 2) {
+        cells = segments.map(s => {
+          const block = text.slice(s.start, s.end).trim();
+          const titleM = block.match(/^\s*\d+\.\s+([^\n:]+)/);
+          const title = titleM ? titleM[1].trim().substring(0,60) : ('Section '+s.num);
+          const matched = matchRisk(block);
+          return { num: s.num, title, raw: block, riskObj: matched, riskLevel: matched ? (matched.risk_level||'low').toLowerCase() : 'none' };
+        });
+      } else {
+        const lines = text.split('\n').map(l=>l.trim()).filter(l=>l.length>8).slice(0,10);
+        cells = lines.map((l,i) => {
+          const matched = matchRisk(l);
+          return { num:i+1, title:l.substring(0,60), raw:l, riskObj:matched, riskLevel: matched ? (matched.risk_level||'low').toLowerCase() : 'none' };
+        });
+      }
+
+      const usedRisks = new Set(cells.map(c=>c.riskObj).filter(Boolean));
+      risks.forEach((r,i) => {
+        if (!usedRisks.has(r)) {
+          cells.push({num:cells.length+1, title:(r.clause||'').substring(0,60), raw:r.clause, riskObj:r, riskLevel:(r.risk_level||'low').toLowerCase()});
+        }
+      });
+
+      document.getElementById('heatmap-grid').innerHTML = cells.map(c => `
+        <div class="heatmap-cell ${c.riskLevel}" onclick="jumpToRisk(${risks.indexOf(c.riskObj)})" title="${esc(c.title)}">
+          <div style="width:100%;">
+            <div style="font-size:9px;opacity:.55;margin-bottom:4px;letter-spacing:.05em;">§${c.num}</div>
+            <div style="font-size:10px;line-height:1.35;word-break:break-word;">${esc(c.title.substring(0,40))}${c.title.length>40?'…':''}</div>
+            ${c.riskLevel!=='none'?`<div style="margin-top:6px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.9;">${c.riskLevel}</div>`:''}
+          </div>
+        </div>`).join('');
+    }
+
+    function jumpToRisk(idx) {
+      switchRTab('risks');
+      if (idx >= 0) { const card = document.getElementById('risk-card-'+idx); if (card) setTimeout(()=>card.scrollIntoView({behavior:'smooth',block:'center'}),100); }
+    }
+
+    function renderRightsWaived(data) {
+      const DETECTORS = [
+        {keys:['jury','trial by jury'],                              right:'Right to Trial by Jury'},
+        {keys:['class action','class-action'],                       right:'Right to Class-Action Lawsuit'},
+        {keys:['arbitr'],                                            right:'Right to Choose Your Dispute Forum'},
+        {keys:['without prior notice','without notice','any time','day or night'], right:'Right to Privacy & Notice Before Entry'},
+        {keys:['maintenance','repair','hvac','roof','foundation'],   right:'Implied Right to Habitable Conditions'},
+        {keys:['non-compete','not to engage','competing business'],  right:'Right to Work in Your Field Post-Employment'},
+        {keys:['intellectual property','invention','work product'],  right:'Ownership of Your Intellectual Property'},
+        {keys:['terminat','24 hour','24-hour','notice to vacate'],   right:'Right to Reasonable Termination Notice'},
+        {keys:['severance'],                                         right:'Right to Severance Pay'},
+      ];
+      const explicit = (data.rights_waived||[]).filter(r=>r&&r.right);
+      const detected = [];
+      (data.risks||[]).forEach(r => {
+        const combined = ((r.clause||'')+' '+(r.explanation||'')).toLowerCase();
+        for (const det of DETECTORS) {
+          if (det.keys.some(k=>combined.includes(k)) && !detected.find(d=>d.right===det.right)) {
+            detected.push({right:det.right, detail:r.explanation||'', clause:r.clause||''});
+          }
+        }
+      });
+      const seen = new Set();
+      const all  = [...explicit,...detected].filter(r=>{ if(seen.has(r.right))return false; seen.add(r.right); return true; });
+
+      const container = document.getElementById('rights-container');
+      if (!all.length) {
+        container.innerHTML = `<div class="glass" style="padding:24px;text-align:center;color:var(--muted);font-size:14px;border-radius:16px">${currentLang==='hi'?'कोई स्पष्ट अधिकार त्याग नहीं मिला।':'No explicit rights waivers detected.'}</div>`;
+        return;
+      }
+      container.innerHTML = all.map(r=>`
+        <div class="rwc">
+          <span class="rwc-i">🚫</span>
+          <div style="min-width:0;">
+            <p class="rwc-tit">${esc(r.right)}</p>
+            ${r.detail?`<p class="rwc-det">${esc(r.detail.substring(0,220))}${r.detail.length>220?'…':''}</p>`:''}
+            ${r.clause?`<p class="rwc-cl">"${esc(r.clause.substring(0,130))}${r.clause.length>130?'…':''}"</p>`:''}
+          </div>
+        </div>`).join('');
+    }
+
+    function renderStrategy(data) {
+      const raw = (data.negotiation_strategy||'').trim();
+      if (!raw) { document.getElementById('strategy-content').innerHTML = `<p style="color:var(--ghost);font-size:14px;">${currentLang==='hi'?'कोई रणनीति उत्पन्न नहीं हुई।':'No strategy generated.'}</p>`; return; }
+      let steps = [];
+      if (raw.includes('*')) {
+        steps = raw.split(/\s*\*\s+/).map(s=>s.trim()).filter(s=>s.length>5);
+      } else if (/\n\s*\d+\./.test(raw) || /^\d+\./.test(raw)) {
+        steps = raw.split(/\n?\s*\d+\.\s+/).map(s=>s.trim()).filter(s=>s.length>5);
+      } else if (raw.includes('\n')) {
+        steps = raw.split('\n').map(s=>s.replace(/^[-–•]\s*/,'').trim()).filter(s=>s.length>5);
+      } else {
+        steps = (raw.match(/[^.!?]+[.!?]+/g)||[raw]).map(s=>s.trim()).filter(s=>s.length>10);
+      }
+      steps = steps.map(s=>s.replace(/^[-–*•\d.]\s*/,'').replace(/^\d+\.\s*/,'').trim()).filter(Boolean);
+
+      document.getElementById('strategy-content').innerHTML = steps.length
+        ? steps.map((s,i)=>`
+          <div class="sstep" style="animation-delay:${i*0.09}s;">
+            <div class="sstep-n">${i+1}</div>
+            <p class="sstep-t">${esc(s)}</p>
+          </div>`).join('')
+        : `<p style="color:var(--text);font-size:14px;line-height:1.7;">${esc(raw)}</p>`;
+    }
+
+    function renderComparison(data) {
+      const rows = (data.risks||[]).filter(r=>r.market_benchmark);
+      const T1 = currentLang==='hi'?'यह अनुबंध':'This Contract';
+      const T2 = currentLang==='hi'?'उद्योग मानक':'Industry Standard';
+      const NO = currentLang==='hi'?'कोई बेंचमार्क डेटा उपलब्ध नहीं है।':'No benchmark data available.';
+      document.getElementById('compare-container').innerHTML = rows.length
+        ? rows.map(r=>`
+          <div class="bmrow">
+            <div><p class="bm-col-tit">${T1}</p><p style="font-size:13px;line-height:1.6;color:var(--danger);">"${esc((r.clause||'').substring(0,110))}${(r.clause||'').length>110?'…':''}"</p></div>
+            <div style="color:var(--muted);font-family:'Fragment Mono',monospace;text-align:center;padding-top:16px;">→</div>
+            <div><p class="bm-col-tit">${T2}</p><p style="font-size:13px;line-height:1.6;color:var(--safe);">${esc(r.market_benchmark)}</p></div>
+          </div>`).join('')
+        : `<p style="color:var(--ghost);font-size:14px;text-align:center;padding:24px 0;">${NO}</p>`;
+    }
+
+    async function sendChat() {
+      const input = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('chat-send-btn');
+      const msg = input.value.trim();
+      if (!msg) return;
+      input.value = ''; input.disabled = true; sendBtn.disabled = true; sendBtn.textContent = '...';
+      
+      const el = document.getElementById('chat-messages');
+      const udiv = document.createElement('div');
+      udiv.className = 'chat-b chat-u'; udiv.textContent = msg;
+      el.appendChild(udiv); el.scrollTop = el.scrollHeight;
+
+      const adiv = document.createElement('div');
+      adiv.className = 'chat-b chat-ai';
+      adiv.innerHTML = `<span style="display:flex;gap:4px;align-items:center"><span class="chat-typing-dot"></span><span class="chat-typing-dot" style="animation-delay:.2s"></span><span class="chat-typing-dot" style="animation-delay:.4s"></span></span>`;
+      el.appendChild(adiv); el.scrollTop = el.scrollHeight;
+
+      const risksCtx = (resultsData?.risks||[]).map((r,i)=> `[${r.risk_level}] "${r.clause.substring(0,80)}" — ${r.explanation.substring(0,120)}`).join('\n');
+      const systemPrompt = `You are a sharp, direct AI legal assistant. Answer in 2-5 clear, direct sentences based on the contract text and analysis provided below. Be practical. End with: "⚠️ Note: I'm an AI, not a licensed attorney. Consult a lawyer for binding advice."\n\nCONTRACT TEXT:\n${contractContext.substring(0,4000)}\n\nANALYSIS:\nScore: ${resultsData?.safety_score}\nSummary: ${resultsData?.summary}\nRisks:\n${risksCtx}`;
+
+      try {
+        const res = await fetch(API_BASE_URL + '/chat', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            message: msg,
+            mode: mode,
+            context: contractContext.substring(0,4000),
+            language: currentLang
+          })
+        });
+        if (!res.ok) {
+          const e = await res.json().catch(()=>undefined);
+          throw new Error(e?.detail || e?.message || 'API error '+res.status);
+        }
+        const d = await res.json();
+        adiv.innerHTML = '';
+        let chatHtml = `<div style="line-height:1.6">${d.response || 'No response received.'}</div>`;
+        if (d.recommendations && d.recommendations.length > 0) {
+            let recs = d.recommendations.filter(r => r && !r.toLowerCase().includes('n/a'));
+            if (recs.length > 0) {
+                let recTitle = currentLang === 'hi' ? 'कार्रवाई योग्य सुझाव:' : 'Actionable Recommendations:';
+                chatHtml += `<div style="margin-top:12px;font-size:11px;color:var(--primary);text-transform:uppercase;letter-spacing:.05em;font-family:'Fragment Mono',monospace;">${recTitle}</div>`;
+                chatHtml += `<ul style="margin-top:6px;padding-left:18px;font-size:13px;color:var(--text2);line-height:1.5;">`;
+                recs.forEach(r => {
+                    chatHtml += `<li style="margin-bottom:6px;">${r}</li>`;
+                });
+                chatHtml += `</ul>`;
+            }
+        }
+        adiv.innerHTML = chatHtml;
+      } catch(err) {
+        adiv.innerHTML = ''; adiv.textContent = 'Could not reach AI assistant: ' + err.message;
+      } finally {
+        input.disabled=false; sendBtn.disabled=false; sendBtn.textContent='ASK →'; input.focus();
+        el.scrollTop = el.scrollHeight;
+      }
+    }
+
+    function quickAsk(q) { document.getElementById('chat-input').value=q; sendChat(); }
+
+    async function downloadReport() {
+      if (!resultsData) return;
+      try {
+        const res = await fetch(API_BASE_URL+'/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(resultsData)});
+        if (!res.ok) throw new Error('Export failed');
+        const text = await res.text();
+        const url = URL.createObjectURL(new Blob([text],{type:'text/markdown'}));
+        const a = document.createElement('a'); a.href=url; a.download='stealth-redline-report.md';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      } catch(err) { alert('Export error: '+err.message); }
+    }
+
+    function updateHUD(c){
+      const hud=document.getElementById('hud'),dot=document.getElementById('hd'),txt=document.getElementById('hdtxt');
+      if(c.High>0){
+        dot.style.cssText='background:var(--danger);box-shadow:0 0 8px var(--danger)';
+        txt.textContent=currentLang==='hi'?`${c.High} उच्च जोखिम धाराएँ`:`${c.High} HIGH RISK CLAUSE${c.High>1?'S':''}`;
+      }
+      else if(c.Medium>0){
+        dot.style.cssText='background:var(--warn);box-shadow:0 0 8px var(--warn)';
+        txt.textContent=currentLang==='hi'?`${c.Medium} मध्यम जोखिम`:`${c.Medium} MEDIUM RISK`;
+      }
+      else{
+        dot.style.cssText='background:var(--safe);box-shadow:0 0 8px var(--safe)';
+        txt.textContent=currentLang==='hi'?'विश्लेषण स्वच्छ':'ANALYSIS CLEAN';
+      }
+      hud.classList.add('vis');
+    }
+
+    function glvl(c){return c.High>0?'high':c.Medium>0?'medium':c.Low>0?'low':'safe'}
+    const ICONS={high:'🚨',medium:'⚠️',low:'🔍',safe:'✅'};
+    const PCLS={high:'php',medium:'pmp',low:'plp',safe:'psp'};
+    const VCLS={high:'vdh',medium:'vdm',low:'vdl',safe:'vds'};
+
+    function showPop(c){
+      const l=glvl(c);
+      const T=TRANSLATIONS[currentLang];
+      const d=T.popup[l];
+      document.getElementById('pbox').className=`pbox ${PCLS[l]}`;
+      document.getElementById('pico').textContent=ICONS[l];
+      document.getElementById('ptit').textContent=d.tit;
+      document.getElementById('ptag').textContent=d.tag;
+      document.getElementById('pmsg').textContent=d.msg;
+      document.getElementById('ptip').textContent=d.tip;
+      document.getElementById('pcta').textContent=d.btn;
+      const ps=[];
+      if(c.High>0)ps.push(`<span class="ppill pph">${c.High} ${T.riskLevels.High}</span>`);
+      if(c.Medium>0)ps.push(`<span class="ppill ppm">${c.Medium} ${T.riskLevels.Medium}</span>`);
+      if(c.Low>0)ps.push(`<span class="ppill ppl">${c.Low} ${T.riskLevels.Low}</span>`);
+      document.getElementById('ppills').innerHTML=ps.length?ps.join(''):`<span class="ppill ppl">0 ${T.riskLevels.Low}</span>`;
+      document.getElementById('rov').classList.add('open');document.body.style.overflow='hidden';
+      window._lc=c;window._ll=l;
+    }
+
+    function closePop(){
+      document.getElementById('rov').classList.remove('open');document.body.style.overflow='';
+      renderVerdict(window._lc,window._ll);
+    }
+
+    function renderVerdict(c,l){
+      const T=TRANSLATIONS[currentLang];
+      const total=(c.High||0)+(c.Medium||0)+(c.Low||0);
+      const el=document.getElementById('verdict');
+      el.innerHTML=`<div class="vcard ${VCLS[l]}" style="background:linear-gradient(145deg,rgba(var(--inv-rgb),.06),rgba(var(--inv-rgb),.02));backdrop-filter:blur(28px)">
+        <div class="vband"><span class="vico">${ICONS[l]}</span><div><div class="vlbl">${currentLang==='hi'?'अनुबंध स्थिति':'Contract Status'}</div><div class="vtit">${T.verdictLabels[l]}</div></div></div>
+        <div class="vbody">
+          <div class="vs"><div class="vsn" style="color:#ff6b85">${c.High||0}</div><div class="vsl">${T.riskLevels.High}</div></div>
+          <div class="vs"><div class="vsn" style="color:#ff8c42">${c.Medium||0}</div><div class="vsl">${T.riskLevels.Medium}</div></div>
+          <div class="vs"><div class="vsn" style="color:#ffd600">${c.Low||0}</div><div class="vsl">${T.riskLevels.Low}</div></div>
+          <div class="vs"><div class="vsn" style="color:var(--muted)">${total}</div><div class="vsl">${currentLang==='hi'?'कुल':'Total'}</div></div>
+        </div>
+      </div>`;
+      el.classList.add('vis');el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+
+    function renderMock(){
+      contractContext = `RESIDENTIAL LEASE AGREEMENT
+This Residential Lease Agreement ("Agreement") is entered into this 18th day of April, 2026, by and between Apex Property Management LLC ("Landlord") and the undersigned individual ("Tenant").
+1. PREMISES AND TERM: Landlord agrees to lease to Tenant the property located at 123 Fake Street, Apt 4B. The term of this lease shall be for 12 months, commencing on May 1, 2026.
+2. RENT AND LATE FEES: Base rent is $1,500 per month, due on the 1st of each month. If rent is not received by 5:00 PM on the 1st, a late fee of $150.00 per day will accrue until the balance is paid in full.
+3. MAINTENANCE AND REPAIRS: Tenant assumes full financial responsibility for all maintenance and repairs to the premises, including but not limited to cosmetic damage, appliance replacement, HVAC unit replacement, roof leaks, and foundation settling. Landlord shall not be liable for any repairs under any circumstances.
+4. RIGHT OF ENTRY: Landlord reserves the absolute right to enter the premises at any time, day or night, without prior notice to the Tenant, for the purposes of inspection, showing the property, or any other reason deemed necessary by the Landlord.
+5. USE OF PREMISES: The premises shall be used exclusively for residential purposes. Tenant must purchase and install only "BreatheEasy" brand MERV-13 air filters, replacing them strictly on the 1st of every month.
+6. DISPUTE RESOLUTION: In the event of any dispute arising from this Agreement, Tenant expressly waives the right to a trial by jury or to participate in a class-action lawsuit. All disputes must be settled through binding arbitration, with all arbitration fees to be paid entirely by the Tenant.
+7. TERMINATION: Landlord may terminate this lease at any time with 24 hours written notice if Landlord decides to sell the property or repurpose the unit.`;
+
+      resultsData = {
+        _lang: "en",
+        contract_type: "Residential Lease Agreement",
+        safety_score: 28,
+        summary: "This Residential Lease Agreement is between Apex Property Management LLC (the Landlord) and the Tenant for a 12-month tenancy at 123 Fake Street, Apt 4B, commencing May 1, 2026. The power balance is severely skewed in the Landlord's favor across every major clause in the agreement. The late fee structure — $150 per calendar day — is predatory by any legal standard and would almost certainly be voided as an unconscionable penalty clause if challenged in court. The Tenant is made fully financially responsible for all structural repairs including HVAC replacement, roof leaks, and foundation settling, which together represent tens of thousands of dollars in potential liability. The Landlord retains the right to enter the property at any hour without notice, and the Tenant simultaneously waives both the right to a jury trial and the ability to join any class-action lawsuit. Finally, the termination clause permits the Landlord to end the tenancy with just 24 hours notice for any business reason, leaving the Tenant with no meaningful housing security. The verdict: this contract should be rejected outright or fully renegotiated by a tenant-side attorney before signing.",
+        negotiation_strategy: "* Reject the $150/day late fee outright as a legal impossibility in most US states — counter-propose a one-time flat fee of 5% of monthly rent ($75) assessed only after a 5-day grace period, and frame this as a statutory compliance issue to put the landlord on the defensive.\n* Demand the maintenance clause be rewritten to restrict Tenant liability exclusively to minor cosmetic repairs under $200 and damage the Tenant directly caused — all HVAC, plumbing, electrical, roof, and foundation work must be returned to the Landlord.\n* Submit all three remaining demands (24-hour entry notice, equal arbitration fee-splitting, and 30-day termination notice minimum) as a single counter-offer package, signaling that you are an informed tenant who has had the contract reviewed.",
+        missing_protections: [
+          "No Implied Warranty of Habitability clause — the Tenant has no written recourse if the unit becomes uninhabitable due to Landlord neglect or failure to maintain structural systems.",
+          "No security deposit terms, return timeline, or itemization requirements — this exposes the Tenant to complete deposit forfeiture with no legal basis to recover it."
+        ],
+        rights_waived: [
+          {right:"Right to Trial by Jury",          detail:"Clause 6 forces all disputes into binding arbitration, eliminating your constitutional right to have a jury of peers decide any dispute about the lease.", clause:"Tenant expressly waives the right to a trial by jury"},
+          {right:"Right to Class-Action Lawsuit",   detail:"You cannot join other tenants to sue the landlord collectively, even for systematic or widespread violations affecting multiple tenants.", clause:"or to participate in a class-action lawsuit"},
+          {right:"Right to Privacy & Notice Before Entry", detail:"The landlord can enter your home at any hour without any advance warning — a direct violation of tenant privacy laws in most US states.", clause:"Landlord reserves the absolute right to enter the premises at any time, day or night, without prior notice"},
+        ],
+        risks: [
+          {
+            clause: "a late fee of $150.00 per day will accrue until the balance is paid in full",
+            risk_level: "High",
+            financial_exposure: "A single day late on a $1,500 rent payment accrues $150/day — after 30 days: $4,500 in penalties (3× monthly rent). After 60 days: $9,000. This can trigger eviction while debt compounds.",
+            explanation: "A $150-per-day late fee is a penalty clause almost universally deemed unconscionable and unenforceable by US courts. However, a landlord can still use it to justify eviction, withhold your deposit, or damage your credit while you fight it in court at your own expense and time.",
+            market_benchmark: "Industry standard is a one-time flat late fee of 5% of monthly rent ($75 on a $1,500 lease), assessed only after a 3-to-5-day grace period. Per-day accrual is illegal in many states.",
+            safe_rewrite: "If rent is not received by the 5th of the month, a one-time late fee of $75.00 (5% of monthly base rent) shall be assessed for that rental period. No further fees shall accrue."
+          },
+          {
+            clause: "Landlord reserves the absolute right to enter the premises at any time, day or night, without prior notice",
+            risk_level: "High",
+            financial_exposure: "Illegal landlord entry is grounds for constructive eviction — allowing you to break the lease without penalty in most states, potentially saving $18,000+ in remaining rent obligation. But exercising this requires legal action.",
+            explanation: "This clause directly violates tenant privacy rights mandated by statute in California, New York, Texas, Florida, and most other US states, which require 24–48 hours written notice. The clause is likely void but you must hire an attorney to enforce your rights.",
+            market_benchmark: "Standard leases and state statutes require a minimum of 24 hours advance written notice, restricted to reasonable hours (8AM–8PM), with a narrow exception for genuine emergencies (fire, flood, gas leak).",
+            safe_rewrite: "Landlord shall provide Tenant with at least 24 hours advance written notice before entering the premises, during reasonable hours (8:00 AM to 8:00 PM), except in genuine emergencies threatening life or structural integrity."
+          },
+          {
+            clause: "Tenant assumes full financial responsibility for all maintenance and repairs...including HVAC unit replacement, roof leaks, and foundation settling",
+            risk_level: "High",
+            financial_exposure: "HVAC replacement: $6,000–$12,000. Roof repair: $8,000–$25,000. Foundation work: $10,000–$40,000. Combined worst-case structural exposure over a 12-month lease: $77,000+.",
+            explanation: "Forcing a tenant to fund structural systems violates the implied warranty of habitability in virtually every US state. Roof, foundation, and HVAC are capital assets belonging to the property — this is the landlord's legal obligation. This clause is largely unenforceable but can be weaponized to justify withholding your security deposit.",
+            market_benchmark: "Standard residential leases restrict tenant liability to minor cosmetic repairs and damage the tenant directly caused, typically capped at $100–$200 per incident. All structural, mechanical, HVAC, plumbing, and roof work is the landlord's exclusive responsibility.",
+            safe_rewrite: "Tenant shall be responsible only for minor cosmetic repairs and damage directly caused by Tenant's negligence, up to $150 per incident. All HVAC, structural, plumbing, electrical, roof, and foundation work is the Landlord's sole responsibility."
+          },
+          {
+            clause: "all arbitration fees to be paid entirely by the Tenant",
+            risk_level: "Medium",
+            financial_exposure: "Arbitration filing fees alone: $1,750–$5,000+, before any attorney fees. This financial barrier effectively prevents tenants from ever formally disputing any issue with the landlord.",
+            explanation: "One-sided arbitration fee allocation is a known tactic to make dispute resolution financially inaccessible for tenants. The US Supreme Court has ruled that mandatory one-sided fee allocations can render an arbitration clause unconscionable.",
+            market_benchmark: "Standard arbitration clauses split costs equally between parties, or require the initiating party to pay with reimbursement if they substantially prevail. Fee caps tied to the disputed amount are common practice.",
+            safe_rewrite: "Arbitration costs shall be split equally between Landlord and Tenant. If the arbitrator finds substantially in Tenant's favor, Landlord shall reimburse Tenant's filing fees and reasonable arbitration costs."
+          },
+          {
+            clause: "Tenant must purchase and install only 'BreatheEasy' brand MERV-13 air filters, replacing them strictly on the 1st of every month",
+            risk_level: "Low",
+            financial_exposure: "BreatheEasy MERV-13 filters retail at $25–$40 each vs $8–$15 for equivalent generics — unnecessary excess cost of $120–$300/year. Non-compliance with brand spec could also be used as a technical lease violation.",
+            explanation: "Brand-mandated consumables are essentially unheard of in residential leases and suggest either a supplier kickback arrangement or a deliberate attempt to create technical grounds for a lease violation that could justify withholding your security deposit.",
+            market_benchmark: "Standard leases require periodic filter replacement of a specified MERV rating from any manufacturer, typically every 90 days. Brand requirements do not appear in any standard residential lease template.",
+            safe_rewrite: "Tenant shall replace HVAC air filters with MERV-13 or higher rated filters of any manufacturer, at a minimum interval of every 90 days."
+          }
+        ]
+      };
+      
+      originalReport = JSON.parse(JSON.stringify(resultsData));
+      saveToHistory(resultsData);
+
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('loading').style.display = 'block';
+      const t=startLoader();
+      
+      setTimeout(() => {
+        clearInterval(t);
+        document.getElementById('loading').style.display = 'none';
+        if (currentLang !== 'en') {
+          translateResults(currentLang);
+        } else {
+          renderResults(resultsData);
+        }
+      }, 1500);
+    }
+
+    function saveToHistory(data) {
+      if (!data || !data.summary) return;
+      try {
+        let h = JSON.parse(localStorage.getItem('sentinal_history') || '[]');
+        const docName = document.getElementById('fn').style.display !== 'none' ? document.getElementById('fn').textContent : 
+                        document.getElementById('imgfn').style.display !== 'none' ? document.getElementById('imgfn').textContent : 'Pasted Text';
+        const entry = {
+          id: Date.now(),
+          date: new Date().toLocaleDateString(currentLang==='hi'?'hi-IN':'en-US', {month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit'}),
+          name: docName.replace(/^[📄🖼]\s*/, ''),
+          score: data.safety_score,
+          type: data.contract_type || 'Unknown',
+          resultsData: data,
+          contractContext: contractContext
+        };
+        h.unshift(entry);
+        if (h.length > 20) h = h.slice(0, 20);
+        localStorage.setItem('sentinal_history', JSON.stringify(h));
+      } catch (e) { console.error('Error saving history', e); }
+    }
+
+    function loadHistory() {
+      const list = document.getElementById('history-list');
+      try {
+        const h = JSON.parse(localStorage.getItem('sentinal_history') || '[]');
+        if (h.length === 0) {
+          list.innerHTML = `<div class="glass" style="padding:24px;text-align:center;color:var(--muted);font-size:14px;border-radius:16px">${currentLang==='hi'?'कोई पिछला विश्लेषण नहीं मिला।':'No previous analysis found.'}</div>`;
+          return;
+        }
+        list.innerHTML = h.map((entry, idx) => {
+          const userPct = Math.round(entry.score || 50);
+          const color = userPct < 40 ? 'var(--danger)' : userPct < 55 ? 'var(--warn)' : 'var(--safe)';
+          return `<div class="glass g-card" style="padding:16px 20px;border-radius:16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:transform 0.2s, box-shadow 0.2s" onclick="viewHistory(${idx})">
+            <div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;color:var(--text);margin-bottom:4px">${esc(entry.name)}</div>
+              <div style="font-family:'Fragment Mono',monospace;font-size:11px;color:var(--muted);display:flex;gap:12px">
+                <span>${esc(entry.date)}</span>
+                <span>•</span>
+                <span>${esc(entry.type)}</span>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${color}">${userPct}%</div>
+              <div style="font-family:'Fragment Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Safety</div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        list.innerHTML = `<div class="glass" style="padding:24px;text-align:center;color:var(--danger);font-size:14px;border-radius:16px">Error loading history</div>`;
+      }
+    }
+
+    function viewHistory(idx) {
+      try {
+        const h = JSON.parse(localStorage.getItem('sentinal_history') || '[]');
+        const entry = h[idx];
+        if (!entry) return;
+        contractContext = entry.contractContext || '';
+        resultsData = entry.resultsData;
+        originalReport = JSON.parse(JSON.stringify(resultsData));
+        document.getElementById('fn').textContent = '📄 ' + entry.name;
+        document.getElementById('fn').style.display = 'inline-flex';
+        
+        showPage('home', document.querySelector('.nav-link[data-en="Home"]'));
+        
+        if (currentLang !== resultsData._lang && resultsData._lang) {
+          translateResults(currentLang);
+        } else {
+          renderResults(resultsData);
+        }
+      } catch (e) { console.error('Error viewing history', e); }
+    }
+
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+    
+    function handleLogin() {
+      const email = document.getElementById('li-email').value.trim();
+      const pass = document.getElementById('li-pass').value.trim();
+      const err = document.getElementById('li-err');
+      err.style.display = 'none';
+      if (!email || !pass) {
+        err.textContent = currentLang==='hi'?'कृपया सभी फ़ील्ड भरें':'Please fill in all fields';
+        err.style.display = 'block'; return;
+      }
+      if (!validateEmail(email)) {
+        err.textContent = currentLang==='hi'?'अमान्य ईमेल पता':'Invalid email address';
+        err.style.display = 'block'; return;
+      }
+      localStorage.setItem('sentinal_user', email);
+      updateAuthUI();
+      closeLogin();
+    }
+    
+    function handleSignup() {
+      const name = document.getElementById('su-name').value.trim();
+      const email = document.getElementById('su-email').value.trim();
+      const pass = document.getElementById('su-pass').value.trim();
+      const err = document.getElementById('su-err');
+      err.style.display = 'none';
+      if (!name || !email || !pass) {
+        err.textContent = currentLang==='hi'?'कृपया सभी फ़ील्ड भरें':'Please fill in all fields';
+        err.style.display = 'block'; return;
+      }
+      if (!validateEmail(email)) {
+        err.textContent = currentLang==='hi'?'अमान्य ईमेल पता':'Invalid email address';
+        err.style.display = 'block'; return;
+      }
+      if (pass.length < 8) {
+        err.textContent = currentLang==='hi'?'पासवर्ड कम से कम 8 अक्षर का होना चाहिए':'Password must be at least 8 characters';
+        err.style.display = 'block'; return;
+      }
+      localStorage.setItem('sentinal_user', email);
+      updateAuthUI();
+      closeLogin();
+    }
+    
+    function simulateSocialLogin(provider) {
+      const email = `user@${provider.toLowerCase()}.com`;
+      localStorage.setItem('sentinal_user', email);
+      updateAuthUI();
+      closeLogin();
+    }
+    
+    function updateAuthUI() {
+      const user = localStorage.getItem('sentinal_user');
+      const btn = document.getElementById('header-login-btn');
+      if (user) {
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>${user.split('@')[0]}</span>`;
+        btn.onclick = () => { localStorage.removeItem('sentinal_user'); updateAuthUI(); };
+      } else {
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span data-en="Sign In" data-hi="साइन इन">${currentLang==='hi'?'साइन इन':'Sign In'}</span>`;
+        btn.onclick = openLogin;
+      }
+    }
+
+    updateAuthUI();
+    switchInput('pdf');
+  </script>
+</body>
+</html>

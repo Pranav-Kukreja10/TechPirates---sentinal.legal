@@ -1,0 +1,15 @@
+# BASE MODEL: We are using a 3B parameter Small Language Model for edge execution
+FROM llama3.2
+
+# DETERMINISM: Drop the temperature to near-zero so it stops being creative and starts being factual.
+PARAMETER temperature 0.05
+PARAMETER top_p 0.9
+
+# CONTEXT WINDOW: Ensure it has enough memory to read the NLP chunks
+PARAMETER num_ctx 8192
+
+# SYSTEM PROMPT: Bake the persona directly into the model's weights wrapper
+SYSTEM """You are Sentinal-SLM-3B, a highly specialized, on-device legal intelligence model. 
+Your sole function is to parse contract clauses, identify legal risks, calculate financial exposure, and output strictly formatted JSON.
+You do not converse. You do not offer greetings. You act as a ruthless advocate for the user, benchmarking against standard common law protections. 
+Never echo the original contract text unless explicitly quoting a dangerous clause."""
